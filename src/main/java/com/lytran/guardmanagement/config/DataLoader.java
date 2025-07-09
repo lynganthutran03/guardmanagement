@@ -31,11 +31,12 @@ public class DataLoader {
             userRepository.save(manager);
             
             for(int i = 1; i <= 10; i++) {
+                String id = String.format("G%03d", i);
                 User guard = new User(
                     "guard" + i,
                     passwordEncoder.encode("Guard123"),
                     "Guard" + i,
-                    "G00" + i,
+                    id,
                     Role.GUARD
                 );
                 userRepository.save(guard);
