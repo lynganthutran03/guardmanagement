@@ -1,9 +1,13 @@
 package com.lytran.guardmanagement.controller;
 
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,28 +18,38 @@ import com.lytran.guardmanagement.dto.LoginResponse;
 import com.lytran.guardmanagement.entity.User;
 import com.lytran.guardmanagement.repository.UserRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api")
 public class LoginController {
+
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest loginRequest) {
-        Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        try {
+            UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(), loginRequest.getPassword()
+            );
 
-        if(userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                return new LoginResponse(true, "Login successful", user.getFullName(), user.getRole());
-            } else {
-                return new LoginResponse(false, "Incorrect password", null, null);
-            }
-        } else {
-            return new LoginResponse(false, "User not found", null, null);
+            Authentication auth = authenticationManager.authenticate(authRequest);
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            request.getSession(true);
+
+            User user = userRepository.findByUsername(loginRequest.getUsername()).get();
+
+            return ResponseEntity.ok(new LoginResponse(true, "Login successful", user.getFullName(), user.getRole()));
+
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new LoginResponse(false, "Invalid username or password", null, null));
         }
     }
 }
