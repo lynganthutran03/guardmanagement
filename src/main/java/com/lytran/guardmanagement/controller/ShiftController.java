@@ -3,7 +3,10 @@ package com.lytran.guardmanagement.controller;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +33,20 @@ public class ShiftController {
     }
 
     @PostMapping("/generate")
-    public Shift generateShift(@RequestBody ShiftRequest req,
-            Authentication auth) {
-        CustomUserDetails cud = (CustomUserDetails) auth.getPrincipal();
-        return shiftService.generateShiftForUser(
-                cud.getUser().getId(),
-                req.getTimeSlot(),
-                req.getBlock());
+    public ResponseEntity<?> generateShift(@RequestBody ShiftRequest req, Authentication auth) {
+        try {
+            CustomUserDetails cud = (CustomUserDetails) auth.getPrincipal();
+            Shift shift = shiftService.generateShiftForUser(
+                    cud.getUser().getId(),
+                    req.getTimeSlot(),
+                    req.getBlock()
+            );
+            return ResponseEntity.ok(shift);
+        } catch (IllegalStateException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/today")

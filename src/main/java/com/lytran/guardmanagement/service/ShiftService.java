@@ -62,7 +62,7 @@ public class ShiftService {
             Block chosenBlock) {
 
         User user = userRepository.findById(userId)
-             .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         TimeSlot time = chosenTime != null
                 ? chosenTime
@@ -71,6 +71,12 @@ public class ShiftService {
         Block block = chosenBlock != null
                 ? chosenBlock
                 : randomFreeBlockForDateAndTime(LocalDate.now(), time);
+
+        List<Shift> todayShifts = shiftRepository.findByUserIdAndShiftDate(userId, LocalDate.now());
+
+        if (todayShifts.size() >= 3) {
+            throw new IllegalStateException("Chỉ được tạo tối đa 3 ca trực mỗi ngày.");
+        }
 
         Shift shift = new Shift();
         shift.setUser(user);
