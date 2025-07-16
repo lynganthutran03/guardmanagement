@@ -95,8 +95,23 @@ public class ShiftService {
     public void acceptShift(Long shiftId) {
         Shift shift = shiftRepository.findById(shiftId)
                 .orElseThrow(() -> new RuntimeException("Shift not found"));
+
+        Long userId = shift.getUser().getId();
+        LocalDate date = shift.getShiftDate();
+
+        List<Shift> alreadyAccepted = shiftRepository.findByUserIdAndShiftDateAndAcceptedTrue(userId, date);
+        if (!alreadyAccepted.isEmpty()) {
+            throw new IllegalStateException("Bạn đã chấp nhận một ca trực hôm nay.");
+        }
+
         shift.setAccepted(true);
         shiftRepository.save(shift);
+
+        List<Shift> otherGenerated = shiftRepository.findByUserIdAndShiftDate(userId, date).stream()
+                .filter(s -> !s.getId().equals(shiftId) && !s.isAccepted())
+                .toList();
+
+        shiftRepository.deleteAll(otherGenerated);
     }
 
     public Long getUserIdByUsername(String username) {
@@ -128,5 +143,9 @@ public class ShiftService {
             }
         }
         throw new RuntimeException("No available block for selected time slot");
+    }
+
+    public List<Shift> getAcceptedShiftsForToday(Long userId, LocalDate date) {
+        return shiftRepository.findByUserIdAndShiftDateAndAcceptedTrue(userId, date);
     }
 }

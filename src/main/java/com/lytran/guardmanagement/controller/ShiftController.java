@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lytran.guardmanagement.dto.AcceptedShiftDTO;
 import com.lytran.guardmanagement.dto.ShiftRequest;
 import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.security.CustomUserDetails;
@@ -57,6 +58,21 @@ public class ShiftController {
     @PostMapping("/{id}/accept")
     public void acceptShift(@PathVariable Long id) {
         shiftService.acceptShift(id);
+    }
+
+    @GetMapping("/accepted-today")
+    public List<AcceptedShiftDTO> getAcceptedShiftsToday(Authentication auth) {
+        CustomUserDetails cud = (CustomUserDetails) auth.getPrincipal();
+        return shiftService.getGeneratedShiftsForUser(cud.getUser().getId(), LocalDate.now())
+                .stream()
+                .filter(Shift::isAccepted)
+                .map(shift -> new AcceptedShiftDTO(
+                shift.getId(),
+                shift.getShiftDate(),
+                shift.getTimeSlot(),
+                shift.getBlock()
+        ))
+                .toList();
     }
 
     private Long getUserIdFromPrincipal(Principal principal) {
