@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lytran.guardmanagement.dto.AcceptedShiftDTO;
@@ -40,7 +41,8 @@ public class ShiftController {
             Shift shift = shiftService.generateShiftForUser(
                     cud.getUser().getId(),
                     req.getTimeSlot(),
-                    req.getBlock()
+                    req.getBlock(),
+                    req.getShiftDate()
             );
             return ResponseEntity.ok(shift);
         } catch (IllegalStateException e) {
@@ -50,14 +52,22 @@ public class ShiftController {
         }
     }
 
-    @GetMapping("/today")
-    public List<Shift> getTodayShifts(Principal principal) {
-        return shiftService.getGeneratedShiftsForUser(getUserIdFromPrincipal(principal), LocalDate.now());
+    @GetMapping
+    public List<Shift> getShiftsByDate(@RequestParam("date") LocalDate date, Principal principal) {
+        Long userId = shiftService.getUserIdByUsername(principal.getName());
+        return shiftService.getGeneratedShiftsForUser(userId, date);
     }
 
     @PostMapping("/{id}/accept")
-    public void acceptShift(@PathVariable Long id) {
-        shiftService.acceptShift(id);
+    public ResponseEntity<?> acceptShift(@PathVariable Long id) {
+        try {
+            shiftService.acceptShift(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException ex) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", ex.getMessage()));
+        }
     }
 
     @GetMapping("/accepted-today")
@@ -75,7 +85,15 @@ public class ShiftController {
                 .toList();
     }
 
-    private Long getUserIdFromPrincipal(Principal principal) {
-        return shiftService.getUserIdByUsername(principal.getName());
+    @GetMapping("/history")
+    public List<Shift> getShiftHistory(Principal principal) {
+        Long userId = shiftService.getUserIdByUsername(principal.getName());
+        return shiftService.getAcceptedShiftsBeforeToday(userId);
+    }
+
+    @GetMapping("/calendar")
+    public List<Shift> getAcceptedShifts(Principal principal) {
+        Long userId = shiftService.getUserIdByUsername(principal.getName());
+        return shiftService.getAllAcceptedShifts(userId);
     }
 }

@@ -57,9 +57,11 @@ public class ShiftService {
         throw new RuntimeException("Could not find an available shift after 20 attempts");
     }
 
-    public Shift generateShiftForUser(Long userId,
+    public Shift generateShiftForUser(
+            Long userId,
             TimeSlot chosenTime,
-            Block chosenBlock) {
+            Block chosenBlock,
+            LocalDate chosenDate) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -72,7 +74,13 @@ public class ShiftService {
                 ? chosenBlock
                 : randomFreeBlockForDateAndTime(LocalDate.now(), time);
 
-        List<Shift> todayShifts = shiftRepository.findByUserIdAndShiftDate(userId, LocalDate.now());
+        LocalDate date = chosenDate != null ? chosenDate : LocalDate.now();
+
+        if (date.isBefore(LocalDate.now())) {
+            throw new IllegalStateException("Không thể tạo ca trực trong quá khứ.");
+        }
+
+        List<Shift> todayShifts = shiftRepository.findByUserIdAndShiftDate(userId, date);
 
         if (todayShifts.size() >= 3) {
             throw new IllegalStateException("Chỉ được tạo tối đa 3 ca trực mỗi ngày.");
@@ -80,7 +88,7 @@ public class ShiftService {
 
         Shift shift = new Shift();
         shift.setUser(user);
-        shift.setShiftDate(LocalDate.now());
+        shift.setShiftDate(date);
         shift.setTimeSlot(time);
         shift.setBlock(block);
         shift.setAccepted(false);
@@ -97,17 +105,19 @@ public class ShiftService {
                 .orElseThrow(() -> new RuntimeException("Shift not found"));
 
         Long userId = shift.getUser().getId();
-        LocalDate date = shift.getShiftDate();
+        LocalDate day = shift.getShiftDate();
 
-        List<Shift> alreadyAccepted = shiftRepository.findByUserIdAndShiftDateAndAcceptedTrue(userId, date);
-        if (!alreadyAccepted.isEmpty()) {
-            throw new IllegalStateException("Bạn đã chấp nhận một ca trực hôm nay.");
+        boolean alreadyAccepted
+                = shiftRepository.existsByUserIdAndShiftDateAndAcceptedTrue(userId, day);
+
+        if (alreadyAccepted) {
+            throw new IllegalStateException("Bạn đã chấp nhận một ca trực ngày này.");
         }
 
         shift.setAccepted(true);
         shiftRepository.save(shift);
 
-        List<Shift> otherGenerated = shiftRepository.findByUserIdAndShiftDate(userId, date).stream()
+        List<Shift> otherGenerated = shiftRepository.findByUserIdAndShiftDate(userId, day).stream()
                 .filter(s -> !s.getId().equals(shiftId) && !s.isAccepted())
                 .toList();
 
@@ -147,5 +157,14 @@ public class ShiftService {
 
     public List<Shift> getAcceptedShiftsForToday(Long userId, LocalDate date) {
         return shiftRepository.findByUserIdAndShiftDateAndAcceptedTrue(userId, date);
+    }
+
+    public List<Shift> getAcceptedShiftsBeforeToday(Long userId) {
+        LocalDate today = LocalDate.now();
+        return shiftRepository.findByUserIdAndShiftDateBeforeAndAcceptedTrue(userId, today);
+    }
+
+    public List<Shift> getAllAcceptedShifts(Long userId) {
+        return shiftRepository.findByUserIdAndAcceptedTrue(userId);
     }
 }
