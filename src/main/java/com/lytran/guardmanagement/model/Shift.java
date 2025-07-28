@@ -2,7 +2,7 @@ package com.lytran.guardmanagement.model;
 
 import java.time.LocalDate;
 
-import com.lytran.guardmanagement.entity.User;
+import com.lytran.guardmanagement.entity.Guard;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,13 +22,14 @@ import jakarta.persistence.UniqueConstraint;
     @UniqueConstraint(columnNames = {"shift_date", "time_slot", "block"})
 })
 public class Shift {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "guard_id")
+    private Guard guard;
 
     @Column(name = "shift_date", nullable = false)
     private LocalDate shiftDate;
@@ -41,9 +42,6 @@ public class Shift {
     @Column(nullable = false)
     private Block block;
 
-    @Column(name = "is_accepted")
-    private boolean accepted = false;
-
     public Long getId() {
         return id;
     }
@@ -52,12 +50,12 @@ public class Shift {
         this.id = id;
     }
 
-    public User getUser() {
-        return user;
+    public Guard getGuard() {
+        return guard;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setGuard(Guard guard) {
+        this.guard = guard;
     }
 
     public LocalDate getShiftDate() {
@@ -82,13 +80,5 @@ public class Shift {
 
     public void setBlock(Block block) {
         this.block = block;
-    }
-
-    public boolean isAccepted() {
-        return accepted;
-    }
-
-    public void setAccepted(boolean accepted) {
-        this.accepted = accepted;
     }
 }

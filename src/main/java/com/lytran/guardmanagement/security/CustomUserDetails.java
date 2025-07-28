@@ -7,33 +7,50 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.lytran.guardmanagement.entity.User;
+import com.lytran.guardmanagement.entity.Guard;
+import com.lytran.guardmanagement.entity.Manager;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    private Guard guard;
+    private Manager manager;
 
-    public CustomUserDetails(User user) {
-        this.user = user;
+    public CustomUserDetails(Guard guard) {
+        this.guard = guard;
+        this.manager = null;
     }
 
-    public User getUser() {
-        return user;
+    public CustomUserDetails(Manager manager) {
+        this.manager = manager;
+        this.guard = null;
+    }
+
+    public boolean isGuard() {
+        return guard != null;
+    }
+
+    public Guard getGuard() {
+        return guard;
+    }
+
+    public Manager getManager() {
+        return manager;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(user.getRole().name()));
-    }
-
-    @Override
-    public String getPassword() {
-        return user.getPassword();
+        String role = isGuard() ? "ROLE_GUARD" : "ROLE_MANAGER";
+        return List.of(new SimpleGrantedAuthority(role));
     }
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        return isGuard() ? guard.getUsername() : manager.getUsername();
+    }
+
+    @Override
+    public String getPassword() {
+        return isGuard() ? guard.getPassword() : manager.getPassword();
     }
 
     @Override

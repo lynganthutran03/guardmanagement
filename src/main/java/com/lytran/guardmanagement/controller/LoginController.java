@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lytran.guardmanagement.dto.LoginRequest;
 import com.lytran.guardmanagement.dto.LoginResponse;
-import com.lytran.guardmanagement.entity.User;
-import com.lytran.guardmanagement.repository.UserRepository;
+import com.lytran.guardmanagement.entity.Role;
+import com.lytran.guardmanagement.security.CustomUserDetails;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -25,27 +25,32 @@ import jakarta.servlet.http.HttpServletRequest;
 public class LoginController {
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         try {
-            UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
-                    loginRequest.getUsername(), loginRequest.getPassword()
-            );
+            UsernamePasswordAuthenticationToken authRequest
+                    = new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword());
 
             Authentication auth = authenticationManager.authenticate(authRequest);
-
             SecurityContextHolder.getContext().setAuthentication(auth);
+            request.getSession(true);  // Create session
 
-            request.getSession(true);
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
-            User user = userRepository.findByUsername(loginRequest.getUsername()).get();
+            String fullName;
+            Role role;
 
-            return ResponseEntity.ok(new LoginResponse(true, "Login successful", user.getFullName(), user.getRole()));
+            if (userDetails.isGuard()) {
+                fullName = userDetails.getGuard().getFullName();
+                role = userDetails.getGuard().getRole();
+            } else {
+                fullName = userDetails.getManager().getFullName();
+                role = userDetails.getManager().getRole();
+            }
+
+            return ResponseEntity.ok(new LoginResponse(true, "Login successful", fullName, role));
 
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

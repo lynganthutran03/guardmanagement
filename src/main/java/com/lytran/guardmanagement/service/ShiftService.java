@@ -7,164 +7,89 @@ import java.util.Random;
 
 import org.springframework.stereotype.Service;
 
-import com.lytran.guardmanagement.entity.User;
+import com.lytran.guardmanagement.entity.Guard;
 import com.lytran.guardmanagement.model.Block;
 import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.model.TimeSlot;
+import com.lytran.guardmanagement.repository.GuardRepository;
 import com.lytran.guardmanagement.repository.ShiftRepository;
-import com.lytran.guardmanagement.repository.UserRepository;
 
 @Service
 public class ShiftService {
 
     public final ShiftRepository shiftRepository;
-    private final UserRepository userRepository;
+    private final GuardRepository guardRepository;
 
-    public ShiftService(ShiftRepository shiftRepository, UserRepository userRepository) {
+    public ShiftService(ShiftRepository shiftRepository, GuardRepository guardRepository) {
         this.shiftRepository = shiftRepository;
-        this.userRepository = userRepository;
+        this.guardRepository = guardRepository;
     }
 
     private static final List<TimeSlot> TIME_SLOTS = Arrays.asList(TimeSlot.MORNING, TimeSlot.AFTERNOON, TimeSlot.EVENING);
-    private static final List<Block> BLOCKS = Arrays.asList(Block.BLOCK_3, Block.BLOCK_4, Block.BLOCK_5, Block.BLOCK_6, Block.BLOCK_8, Block.BLOCK_10, Block.BLOCK_11);
+    private static final List<Block> BLOCKS = Arrays.asList(
+            Block.BLOCK_3, Block.BLOCK_4, Block.BLOCK_5,
+            Block.BLOCK_6, Block.BLOCK_8, Block.BLOCK_10, Block.BLOCK_11);
 
-    public Shift generateRandomShift(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        LocalDate today = LocalDate.now();
-        int attempts = 0;
-
-        while (attempts < 20) {
-            TimeSlot randomSlot = TIME_SLOTS.get(new Random().nextInt(TIME_SLOTS.size()));
-            Block randomBlock = BLOCKS.get(new Random().nextInt(BLOCKS.size()));
-
-            boolean isTaken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(today, randomSlot, randomBlock);
-
-            if (!isTaken) {
-                Shift shift = new Shift();
-                shift.setUser(user);
-                shift.setShiftDate(today);
-                shift.setTimeSlot(randomSlot);
-                shift.setBlock(randomBlock);
-                shift.setAccepted(false);
-
-                return shiftRepository.save(shift);
-            }
-
-            attempts++;
-        }
-
-        throw new RuntimeException("Could not find an available shift after 20 attempts");
-    }
-
-    public Shift generateShiftForUser(
-            Long userId,
-            TimeSlot chosenTime,
-            Block chosenBlock,
-            LocalDate chosenDate) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        TimeSlot time = chosenTime != null
-                ? chosenTime
-                : randomFreeTimeSlotForDate(LocalDate.now(), userId);
-
-        Block block = chosenBlock != null
-                ? chosenBlock
-                : randomFreeBlockForDateAndTime(LocalDate.now(), time);
-
-        LocalDate date = chosenDate != null ? chosenDate : LocalDate.now();
+    // Manager creates shift for guard
+    public Shift createShift(Long guardId, TimeSlot timeSlot, Block block, LocalDate date) {
+        Guard guard = guardRepository.findById(guardId)
+                .orElseThrow(() -> new RuntimeException("Guard not found"));
 
         if (date.isBefore(LocalDate.now())) {
             throw new IllegalStateException("Không thể tạo ca trực trong quá khứ.");
         }
 
-        List<Shift> todayShifts = shiftRepository.findByUserIdAndShiftDate(userId, date);
-
-        if (todayShifts.size() >= 3) {
-            throw new IllegalStateException("Chỉ được tạo tối đa 3 ca trực mỗi ngày.");
+        boolean isTaken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, timeSlot, block);
+        if (isTaken) {
+            throw new IllegalStateException("Ca trực này đã có người đảm nhận.");
         }
 
         Shift shift = new Shift();
-        shift.setUser(user);
+        shift.setGuard(guard);
         shift.setShiftDate(date);
-        shift.setTimeSlot(time);
+        shift.setTimeSlot(timeSlot);
         shift.setBlock(block);
-        shift.setAccepted(false);
-        shiftRepository.save(shift);
+
         return shiftRepository.save(shift);
     }
 
-    public List<Shift> getGeneratedShiftsForUser(Long userId, LocalDate date) {
-        return shiftRepository.findByUserIdAndShiftDate(userId, date);
+    public List<Shift> getShiftsForGuardByDate(Long guardId, LocalDate date) {
+        return shiftRepository.findByGuardIdAndShiftDate(guardId, date);
     }
 
-    public void acceptShift(Long shiftId) {
-        Shift shift = shiftRepository.findById(shiftId)
-                .orElseThrow(() -> new RuntimeException("Shift not found"));
-
-        Long userId = shift.getUser().getId();
-        LocalDate day = shift.getShiftDate();
-
-        boolean alreadyAccepted
-                = shiftRepository.existsByUserIdAndShiftDateAndAcceptedTrue(userId, day);
-
-        if (alreadyAccepted) {
-            throw new IllegalStateException("Bạn đã chấp nhận một ca trực ngày này.");
-        }
-
-        shift.setAccepted(true);
-        shiftRepository.save(shift);
-
-        List<Shift> otherGenerated = shiftRepository.findByUserIdAndShiftDate(userId, day).stream()
-                .filter(s -> !s.getId().equals(shiftId) && !s.isAccepted())
-                .toList();
-
-        shiftRepository.deleteAll(otherGenerated);
+    public List<Shift> getShiftsBeforeToday(Long guardId) {
+        return shiftRepository.findByGuardIdAndShiftDateBefore(guardId, LocalDate.now());
     }
 
-    public Long getUserIdByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"))
+    public List<Shift> getAllShiftsForGuard(Long guardId) {
+        return shiftRepository.findByGuardId(guardId);
+    }
+
+    public Long getGuardIdByUsername(String username) {
+        return guardRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Guard not found"))
                 .getId();
     }
 
-    private TimeSlot randomFreeTimeSlotForDate(LocalDate date, Long userId) {
+    // Optional random generator helper
+    public TimeSlot getRandomFreeTimeSlot(LocalDate date) {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            TimeSlot ts = TIME_SLOTS.get(random.nextInt(TIME_SLOTS.size()));
-            boolean available = BLOCKS.stream().anyMatch(block
-                    -> !shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, ts, block));
-            if (available) {
-                return ts;
-            }
+            TimeSlot slot = TIME_SLOTS.get(random.nextInt(TIME_SLOTS.size()));
+            boolean available = BLOCKS.stream().anyMatch(block ->
+                    !shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block));
+            if (available) return slot;
         }
-        throw new RuntimeException("No available time slot found");
+        throw new RuntimeException("No available time slot");
     }
 
-    private Block randomFreeBlockForDateAndTime(LocalDate date, TimeSlot timeSlot) {
+    public Block getRandomFreeBlock(LocalDate date, TimeSlot slot) {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
             Block block = BLOCKS.get(random.nextInt(BLOCKS.size()));
-            boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, timeSlot, block);
-            if (!taken) {
-                return block;
-            }
+            boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block);
+            if (!taken) return block;
         }
-        throw new RuntimeException("No available block for selected time slot");
-    }
-
-    public List<Shift> getAcceptedShiftsForToday(Long userId, LocalDate date) {
-        return shiftRepository.findByUserIdAndShiftDateAndAcceptedTrue(userId, date);
-    }
-
-    public List<Shift> getAcceptedShiftsBeforeToday(Long userId) {
-        LocalDate today = LocalDate.now();
-        return shiftRepository.findByUserIdAndShiftDateBeforeAndAcceptedTrue(userId, today);
-    }
-
-    public List<Shift> getAllAcceptedShifts(Long userId) {
-        return shiftRepository.findByUserIdAndAcceptedTrue(userId);
+        throw new RuntimeException("No available block for selected slot");
     }
 }

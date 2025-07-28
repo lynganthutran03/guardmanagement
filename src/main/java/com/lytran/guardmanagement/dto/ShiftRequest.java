@@ -6,10 +6,17 @@ import com.lytran.guardmanagement.model.Block;
 import com.lytran.guardmanagement.model.TimeSlot;
 
 public class ShiftRequest {
+    private Long userId;     
     private TimeSlot timeSlot;
     private Block block;
     private LocalDate shiftDate;
 
+    public Long getUserId() {
+        return userId;
+    }
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
     public TimeSlot getTimeSlot() {
         return timeSlot;
     }

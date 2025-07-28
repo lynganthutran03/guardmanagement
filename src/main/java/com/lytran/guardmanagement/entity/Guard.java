@@ -10,10 +10,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "guards")
+public class Guard {
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -30,16 +31,16 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    private Role role = Role.GUARD;
 
-    public User() {}
+    public Guard() {}
 
-    public User(String username, String password, String fullName, String identityNumber,  Role role) {
+    public Guard(String username, String password, String fullName, String identityNumber) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;
         this.identityNumber = identityNumber;
-        this.role = role;
+        this.role = Role.GUARD;
     }
 
     public Long getId() {
