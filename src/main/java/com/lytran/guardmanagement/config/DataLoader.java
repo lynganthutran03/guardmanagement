@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.lytran.guardmanagement.entity.Guard;
+import com.lytran.guardmanagement.entity.Employee;
 import com.lytran.guardmanagement.entity.Manager;
-import com.lytran.guardmanagement.repository.GuardRepository;
+import com.lytran.guardmanagement.repository.EmployeeRepository;
 import com.lytran.guardmanagement.repository.ManagerRepository;
 
 import jakarta.annotation.PostConstruct;
@@ -14,7 +14,7 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class DataLoader {
     @Autowired
-    private GuardRepository guardRepository;
+    private EmployeeRepository employeeRepository;
 
     @Autowired
     private ManagerRepository managerRepository;
@@ -34,16 +34,16 @@ public class DataLoader {
             managerRepository.save(manager);
         }
 
-        if(guardRepository.count() == 0) {
+        if(employeeRepository.count() == 0) {
             for(int i = 1; i <= 10; i++) {
                 String id = String.format("G%03d", i);
-                Guard guard = new Guard (
+                Employee guard = new Employee (
                     "guard" + i,
                     passwordEncoder.encode("Guard123"),
                     "Guard" + i,
                     id
                 );
-                guardRepository.save(guard);
+                employeeRepository.save(guard);
             }
         }
     }

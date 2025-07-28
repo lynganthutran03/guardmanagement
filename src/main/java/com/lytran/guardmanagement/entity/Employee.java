@@ -1,17 +1,10 @@
 package com.lytran.guardmanagement.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "guards")
-public class Guard {
+@Table(name = "employees")
+public class Employee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,19 +16,19 @@ public class Guard {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "identity_number", unique = true)
+    @Column(name = "identity_number", unique = true, nullable = false)
     private String identityNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.GUARD;
 
-    public Guard() {}
+    public Employee() {}
 
-    public Guard(String username, String password, String fullName, String identityNumber) {
+    public Employee(String username, String password, String fullName, String identityNumber) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;

@@ -2,7 +2,8 @@ package com.lytran.guardmanagement.model;
 
 import java.time.LocalDate;
 
-import com.lytran.guardmanagement.entity.Guard;
+import com.lytran.guardmanagement.entity.Employee;
+import com.lytran.guardmanagement.entity.Manager;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,7 +30,11 @@ public class Shift {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guard_id")
-    private Guard guard;
+    private Employee guard;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id", nullable = false)
+    private Manager manager;
 
     @Column(name = "shift_date", nullable = false)
     private LocalDate shiftDate;
@@ -50,12 +55,20 @@ public class Shift {
         this.id = id;
     }
 
-    public Guard getGuard() {
+    public Employee getGuard() {
         return guard;
     }
 
-    public void setGuard(Guard guard) {
+    public void setGuard(Employee guard) {
         this.guard = guard;
+    }
+
+    public Manager getManager() {
+        return manager;
+    }
+
+    public void setManager(Manager manager) {
+        this.manager = manager;
     }
 
     public LocalDate getShiftDate() {

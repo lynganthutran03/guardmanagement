@@ -7,20 +7,20 @@ import java.util.Random;
 
 import org.springframework.stereotype.Service;
 
-import com.lytran.guardmanagement.entity.Guard;
+import com.lytran.guardmanagement.entity.Employee;
 import com.lytran.guardmanagement.model.Block;
 import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.model.TimeSlot;
-import com.lytran.guardmanagement.repository.GuardRepository;
+import com.lytran.guardmanagement.repository.EmployeeRepository;
 import com.lytran.guardmanagement.repository.ShiftRepository;
 
 @Service
 public class ShiftService {
 
     public final ShiftRepository shiftRepository;
-    private final GuardRepository guardRepository;
+    private final EmployeeRepository guardRepository;
 
-    public ShiftService(ShiftRepository shiftRepository, GuardRepository guardRepository) {
+    public ShiftService(ShiftRepository shiftRepository, EmployeeRepository guardRepository) {
         this.shiftRepository = shiftRepository;
         this.guardRepository = guardRepository;
     }
@@ -32,7 +32,7 @@ public class ShiftService {
 
     // Manager creates shift for guard
     public Shift createShift(Long guardId, TimeSlot timeSlot, Block block, LocalDate date) {
-        Guard guard = guardRepository.findById(guardId)
+        Employee guard = guardRepository.findById(guardId)
                 .orElseThrow(() -> new RuntimeException("Guard not found"));
 
         if (date.isBefore(LocalDate.now())) {
