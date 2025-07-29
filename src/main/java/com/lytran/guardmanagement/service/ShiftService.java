@@ -26,13 +26,15 @@ public class ShiftService {
     private final EmployeeRepository employeeRepository;
     private final ManagerRepository managerRepository;
 
-    public ShiftService(ShiftRepository shiftRepository, EmployeeRepository employeeRepository, ManagerRepository managerRepository) {
+    public ShiftService(ShiftRepository shiftRepository, EmployeeRepository employeeRepository,
+            ManagerRepository managerRepository) {
         this.shiftRepository = shiftRepository;
         this.employeeRepository = employeeRepository;
         this.managerRepository = managerRepository;
     }
 
-    private static final List<TimeSlot> TIME_SLOTS = Arrays.asList(TimeSlot.MORNING, TimeSlot.AFTERNOON, TimeSlot.EVENING);
+    private static final List<TimeSlot> TIME_SLOTS = Arrays.asList(TimeSlot.MORNING, TimeSlot.AFTERNOON,
+            TimeSlot.EVENING);
     private static final List<Block> BLOCKS = Arrays.asList(
             Block.BLOCK_3, Block.BLOCK_4, Block.BLOCK_5,
             Block.BLOCK_6, Block.BLOCK_8, Block.BLOCK_10, Block.BLOCK_11);
@@ -122,8 +124,8 @@ public class ShiftService {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
             TimeSlot slot = TIME_SLOTS.get(random.nextInt(TIME_SLOTS.size()));
-            boolean available = BLOCKS.stream().anyMatch(block
-                    -> !shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block));
+            boolean available = BLOCKS.stream()
+                    .anyMatch(block -> !shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block));
             if (available) {
                 return slot;
             }
@@ -158,6 +160,7 @@ public class ShiftService {
 
     public List<ShiftDTO> getAllShifts(Long employeeId) {
         return shiftRepository.findByGuardId(employeeId).stream()
+                .filter(shift -> shift.getGuard() != null)
                 .map(this::convertToDTO)
                 .toList();
     }
@@ -171,5 +174,16 @@ public class ShiftService {
         }
 
         return Optional.of(convertToDTO(shifts.get(0)));
+    }
+
+    public void assignShiftToEmployee(Long shiftId, Long employeeId) {
+        Shift shift = shiftRepository.findById(shiftId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy ca trực."));
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên."));
+
+        shift.setGuard(employee);
+        shiftRepository.save(shift);
     }
 }

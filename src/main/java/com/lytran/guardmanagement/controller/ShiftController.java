@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,9 +62,11 @@ public class ShiftController {
     }
 
     @GetMapping("/shifts/calendar")
-    public List<ShiftDTO> getAllShifts(Principal principal) {
+    public List<ShiftDTO> getAcceptedShifts(Principal principal) {
         Long employeeId = shiftService.getEmployeeIdByUsername(principal.getName());
-        return shiftService.getAllShifts(employeeId);
+        return shiftService.getAllShifts(employeeId).stream()
+                .filter(shift -> shift.getEmployeeId() != null)
+                .toList();
     }
 
     @GetMapping("/shifts/accepted-today")
@@ -73,4 +77,14 @@ public class ShiftController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PatchMapping("/manager/shifts/{shiftId}/assign")
+    public ResponseEntity<Void> assignShift(@PathVariable Long shiftId, @RequestBody Map<String, Long> body) {
+        Long employeeId = body.get("employeeId");
+        try {
+            shiftService.assignShiftToEmployee(shiftId, employeeId);
+            return ResponseEntity.noContent().build(); // HTTP 204
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // Or return message
+        }
+    }
 }
