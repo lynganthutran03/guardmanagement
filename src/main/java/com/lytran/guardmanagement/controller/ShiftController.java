@@ -7,14 +7,21 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.lytran.guardmanagement.dto.ShiftDTO;
 import com.lytran.guardmanagement.dto.ShiftRequest;
 import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.service.ShiftService;
 
 @RestController
-@RequestMapping("/api/shifts")
+@RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class ShiftController {
 
@@ -24,40 +31,46 @@ public class ShiftController {
         this.shiftService = shiftService;
     }
 
-    // 👩‍💼 Manager creates shift for a guard
-    @PostMapping("/create")
-    public ResponseEntity<?> createShift(@RequestBody ShiftRequest req) {
+    @PostMapping("/manager/shifts")
+    public ResponseEntity<?> createShiftByManager(@RequestBody ShiftRequest request, Principal principal) {
         try {
-            Shift shift = shiftService.createShift(
-                    req.getUserId(), // manager must send target guard ID
-                    req.getTimeSlot(),
-                    req.getBlock(),
-                    req.getShiftDate()
-            );
+            Shift shift = shiftService.createShiftByManager(request, principal.getName());
             return ResponseEntity.ok(shift);
-        } catch (IllegalStateException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
 
-    // 👮 Guard views shifts for a specific date
-    @GetMapping
-    public List<Shift> getShiftsByDate(@RequestParam("date") LocalDate date, Principal principal) {
-        Long guardId = shiftService.getGuardIdByUsername(principal.getName());
-        return shiftService.getShiftsForGuardByDate(guardId, date);
+    @GetMapping("/manager/shifts")
+    public List<ShiftDTO> getShiftsForGuardOnDate(@RequestParam("employeeId") Long employeeId,
+            @RequestParam("date") LocalDate date) {
+        return shiftService.getShiftsForEmployeeByDate(employeeId, date);
     }
 
-    // 📆 Guard gets shift history before today
-    @GetMapping("/history")
-    public List<Shift> getShiftHistory(Principal principal) {
-        Long guardId = shiftService.getGuardIdByUsername(principal.getName());
-        return shiftService.getShiftsBeforeToday(guardId);
+    @GetMapping("/shifts")
+    public List<ShiftDTO> getShiftsByDate(@RequestParam("date") LocalDate date, Principal principal) {
+        Long employeeId = shiftService.getEmployeeIdByUsername(principal.getName());
+        return shiftService.getShiftsForEmployeeByDate(employeeId, date);
     }
 
-    // 📅 Guard sees all their shifts
-    @GetMapping("/calendar")
-    public List<Shift> getAllShifts(Principal principal) {
-        Long guardId = shiftService.getGuardIdByUsername(principal.getName());
-        return shiftService.getAllShiftsForGuard(guardId);
+    @GetMapping("/shifts/history")
+    public List<ShiftDTO> getShiftHistory(Principal principal) {
+        Long employeeId = shiftService.getEmployeeIdByUsername(principal.getName());
+        return shiftService.getShiftHistory(employeeId);
     }
+
+    @GetMapping("/shifts/calendar")
+    public List<ShiftDTO> getAllShifts(Principal principal) {
+        Long employeeId = shiftService.getEmployeeIdByUsername(principal.getName());
+        return shiftService.getAllShifts(employeeId);
+    }
+
+    @GetMapping("/shifts/accepted-today")
+    public ResponseEntity<ShiftDTO> getTodayAcceptedShift(Principal principal) {
+        Long employeeId = shiftService.getEmployeeIdByUsername(principal.getName());
+        return shiftService.getTodayAcceptedShift(employeeId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }

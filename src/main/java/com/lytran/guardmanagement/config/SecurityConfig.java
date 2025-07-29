@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests()
                 .requestMatchers("/api/login").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/shifts/generate").hasAuthority("GUARD")
+                .requestMatchers("/api/shifts/accepted-today").hasRole("GUARD")
                 .anyRequest().authenticated()
                 .and()
                 .authenticationProvider(authProvider())

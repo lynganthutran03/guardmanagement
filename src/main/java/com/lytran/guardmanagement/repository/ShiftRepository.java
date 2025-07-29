@@ -10,7 +10,7 @@ import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.model.TimeSlot;
 
 public interface ShiftRepository extends JpaRepository<Shift, Long> {
-    
+
     boolean existsByShiftDateAndTimeSlotAndBlock(LocalDate date, TimeSlot timeSlot, Block block);
 
     List<Shift> findByGuardIdAndShiftDate(Long guardId, LocalDate date);
