@@ -63,15 +63,12 @@ public class ShiftService {
      * Manager-initiated shift generation logic
      */
     public Shift createShiftByManager(ShiftRequest request, String managerUsername) {
-        if (request.getEmployeeId() == null || request.getShiftDate() == null) {
-            throw new IllegalArgumentException("Thiếu thông tin nhân viên hoặc ngày làm việc.");
+        if (request.getShiftDate() == null) {
+            throw new IllegalArgumentException("Thiếu ngày làm việc.");
         }
 
         Manager manager = managerRepository.findByUsername(managerUsername)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
-
-        Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên."));
 
         if (request.getShiftDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Không thể tạo ca trực trong quá khứ.");
@@ -80,7 +77,6 @@ public class ShiftService {
         TimeSlot timeSlot = request.getTimeSlot();
         Block block = request.getBlock();
 
-        // Generate missing info if needed
         if (timeSlot == null && block != null) {
             timeSlot = getRandomFreeTimeSlot(request.getShiftDate());
         } else if (timeSlot != null && block == null) {
@@ -97,7 +93,6 @@ public class ShiftService {
         }
 
         Shift shift = new Shift();
-        shift.setGuard(employee);
         shift.setManager(manager);
         shift.setShiftDate(request.getShiftDate());
         shift.setTimeSlot(timeSlot);
@@ -169,11 +164,10 @@ public class ShiftService {
         LocalDate today = LocalDate.now();
         List<Shift> shifts = shiftRepository.findByGuardIdAndShiftDate(employeeId, today);
 
-        if (shifts.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(convertToDTO(shifts.get(0)));
+        return shifts.stream()
+                .filter(s -> s.getGuard() != null && s.getGuard().getId().equals(employeeId))
+                .findFirst()
+                .map(this::convertToDTO);
     }
 
     public void assignShiftToEmployee(Long shiftId, Long employeeId) {
@@ -183,7 +177,13 @@ public class ShiftService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên."));
 
+        boolean alreadyAssigned = shiftRepository.existsByGuardIdAndShiftDate(employeeId, shift.getShiftDate());
+        if (alreadyAssigned) {
+            throw new RuntimeException("Nhân viên đã có ca trực vào ngày này.");
+        }
+
         shift.setGuard(employee);
         shiftRepository.save(shift);
     }
+
 }
