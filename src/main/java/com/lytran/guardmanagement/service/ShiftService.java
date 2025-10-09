@@ -12,7 +12,7 @@ import com.lytran.guardmanagement.dto.ShiftDTO;
 import com.lytran.guardmanagement.dto.ShiftRequest;
 import com.lytran.guardmanagement.entity.Employee;
 import com.lytran.guardmanagement.entity.Manager;
-import com.lytran.guardmanagement.model.Block;
+import com.lytran.guardmanagement.model.Location;
 import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.model.TimeSlot;
 import com.lytran.guardmanagement.repository.EmployeeRepository;
@@ -33,11 +33,11 @@ public class ShiftService {
         this.managerRepository = managerRepository;
     }
 
-    private static final List<TimeSlot> TIME_SLOTS = Arrays.asList(TimeSlot.MORNING, TimeSlot.AFTERNOON,
-            TimeSlot.EVENING);
-    private static final List<Block> BLOCKS = Arrays.asList(
-            Block.BLOCK_3, Block.BLOCK_4, Block.BLOCK_5,
-            Block.BLOCK_6, Block.BLOCK_8, Block.BLOCK_10, Block.BLOCK_11);
+    private static final List<TimeSlot> TIME_SLOTS = Arrays.asList(TimeSlot.DAY_SHIFT, TimeSlot.NIGHT_SHIFT);
+    private static final List<Location> LOCATIONS = Arrays.asList(
+            Location.BLOCK_3, Location.BLOCK_4, Location.BLOCK_5,
+            Location.BLOCK_6, Location.BLOCK_8, Location.BLOCK_10, Location.BLOCK_11,
+            Location.GATE_1, Location.GATE_2, Location.GATE_3);
 
     private ShiftDTO convertToDTO(Shift shift) {
         ShiftDTO dto = new ShiftDTO();
@@ -75,7 +75,7 @@ public class ShiftService {
         }
 
         TimeSlot timeSlot = request.getTimeSlot();
-        Block block = request.getBlock();
+        Location block = request.getBlock();
 
         if (timeSlot == null && block != null) {
             timeSlot = getRandomFreeTimeSlot(request.getShiftDate());
@@ -119,7 +119,7 @@ public class ShiftService {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
             TimeSlot slot = TIME_SLOTS.get(random.nextInt(TIME_SLOTS.size()));
-            boolean available = BLOCKS.stream()
+            boolean available = LOCATIONS.stream()
                     .anyMatch(block -> !shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block));
             if (available) {
                 return slot;
@@ -128,10 +128,10 @@ public class ShiftService {
         throw new RuntimeException("Không còn khung giờ trống.");
     }
 
-    public Block getRandomFreeBlock(LocalDate date, TimeSlot slot) {
+    public Location getRandomFreeBlock(LocalDate date, TimeSlot slot) {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            Block block = BLOCKS.get(random.nextInt(BLOCKS.size()));
+            Location block = LOCATIONS.get(random.nextInt(LOCATIONS.size()));
             boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block);
             if (!taken) {
                 return block;

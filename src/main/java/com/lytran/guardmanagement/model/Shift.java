@@ -20,7 +20,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "shifts", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"shift_date", "time_slot", "block"})
+    @UniqueConstraint(columnNames = {"shift_date", "time_slot", "location"})
 })
 public class Shift {
 
@@ -45,7 +45,7 @@ public class Shift {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Block block;
+    private Location location;
 
     public Long getId() {
         return id;
@@ -87,11 +87,11 @@ public class Shift {
         this.timeSlot = timeSlot;
     }
 
-    public Block getBlock() {
-        return block;
+    public Location getBlock() {
+        return location;
     }
 
-    public void setBlock(Block block) {
-        this.block = block;
+    public void setBlock(Location location) {
+        this.location = location;
     }
 }

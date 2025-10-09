@@ -1,9 +1,8 @@
 package com.lytran.guardmanagement.model;
 
 public enum TimeSlot {
-    MORNING("07:30 - 11:30"),
-    AFTERNOON("11:30 - 15:30"),
-    EVENING("15:30 - 19:30");
+    DAY_SHIFT("07:30 - 14:30"),
+    NIGHT_SHIFT("14:30 - 21:30");
 
     private final String label;
 

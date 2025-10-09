@@ -2,14 +2,14 @@ package com.lytran.guardmanagement.dto;
 
 import java.time.LocalDate;
 
-import com.lytran.guardmanagement.model.Block;
+import com.lytran.guardmanagement.model.Location;
 import com.lytran.guardmanagement.model.TimeSlot;
 
 public class ShiftRequest {
     private Long employeeId;
     private LocalDate shiftDate;
     private TimeSlot timeSlot;
-    private Block block;
+    private Location location;
 
     public Long getEmployeeId() {
         return employeeId;
@@ -35,11 +35,11 @@ public class ShiftRequest {
         this.timeSlot = timeSlot;
     }
 
-    public Block getBlock() {
-        return block;
+    public Location getBlock() {
+        return location;
     }
 
-    public void setBlock(Block block) {
-        this.block = block;
+    public void setBlock(Location location) {
+        this.location = location;
     }
 }
