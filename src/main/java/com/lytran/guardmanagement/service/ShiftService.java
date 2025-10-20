@@ -48,8 +48,8 @@ public class ShiftService {
             dto.setTimeSlot(shift.getTimeSlot().name());
         }
 
-        if (shift.getBlock() != null) {
-            dto.setBlock(shift.getBlock().name());
+        if (shift.getLocation() != null) {
+            dto.setLocation(shift.getLocation().name());
         }
 
         if (shift.getGuard() != null) {
@@ -75,19 +75,19 @@ public class ShiftService {
         }
 
         TimeSlot timeSlot = request.getTimeSlot();
-        Location block = request.getBlock();
+        Location location = request.getLocation();
 
-        if (timeSlot == null && block != null) {
+        if (timeSlot == null && location != null) {
             timeSlot = getRandomFreeTimeSlot(request.getShiftDate());
-        } else if (timeSlot != null && block == null) {
-            block = getRandomFreeBlock(request.getShiftDate(), timeSlot);
+        } else if (timeSlot != null && location == null) {
+            location = getRandomFreelocation(request.getShiftDate(), timeSlot);
         }
 
-        if (timeSlot == null || block == null) {
-            throw new IllegalArgumentException("Phải chọn ít nhất khung giờ hoặc block.");
+        if (timeSlot == null || location == null) {
+            throw new IllegalArgumentException("Phải chọn ít nhất khung giờ hoặc khu vực.");
         }
 
-        boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(request.getShiftDate(), timeSlot, block);
+        boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndLocation(request.getShiftDate(), timeSlot, location);
         if (taken) {
             throw new IllegalArgumentException("Ca trực này đã được chọn.");
         }
@@ -96,7 +96,7 @@ public class ShiftService {
         shift.setManager(manager);
         shift.setShiftDate(request.getShiftDate());
         shift.setTimeSlot(timeSlot);
-        shift.setBlock(block);
+        shift.setLocation(location);
 
         return shiftRepository.save(shift);
     }
@@ -120,7 +120,7 @@ public class ShiftService {
         for (int i = 0; i < 10; i++) {
             TimeSlot slot = TIME_SLOTS.get(random.nextInt(TIME_SLOTS.size()));
             boolean available = LOCATIONS.stream()
-                    .anyMatch(block -> !shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block));
+                    .anyMatch(location -> !shiftRepository.existsByShiftDateAndTimeSlotAndLocation(date, slot, location));
             if (available) {
                 return slot;
             }
@@ -128,16 +128,16 @@ public class ShiftService {
         throw new RuntimeException("Không còn khung giờ trống.");
     }
 
-    public Location getRandomFreeBlock(LocalDate date, TimeSlot slot) {
+    public Location getRandomFreelocation(LocalDate date, TimeSlot slot) {
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            Location block = LOCATIONS.get(random.nextInt(LOCATIONS.size()));
-            boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndBlock(date, slot, block);
+            Location location = LOCATIONS.get(random.nextInt(LOCATIONS.size()));
+            boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndLocation(date, slot, location);
             if (!taken) {
-                return block;
+                return location;
             }
         }
-        throw new RuntimeException("Không còn block trống cho khung giờ đã chọn.");
+        throw new RuntimeException("Không còn khu vực trống cho khung giờ đã chọn.");
     }
 
     public List<ShiftDTO> getShiftsForEmployeeByDate(Long employeeId, LocalDate date) {

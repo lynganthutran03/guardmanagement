@@ -35,11 +35,11 @@ public class ShiftRequest {
         this.timeSlot = timeSlot;
     }
 
-    public Location getBlock() {
+    public Location getLocation() {
         return location;
     }
 
-    public void setBlock(Location location) {
+    public void setLocation(Location location) {
         this.location = location;
     }
 }

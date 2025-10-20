@@ -13,7 +13,7 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     boolean existsByGuardIdAndShiftDate(Long guardId, LocalDate date);
 
-    boolean existsByShiftDateAndTimeSlotAndBlock(LocalDate date, TimeSlot timeSlot, Location location);
+    boolean existsByShiftDateAndTimeSlotAndLocation(LocalDate date, TimeSlot timeSlot, Location location);
 
     List<Shift> findByGuardIdAndShiftDate(Long guardId, LocalDate date);
 
