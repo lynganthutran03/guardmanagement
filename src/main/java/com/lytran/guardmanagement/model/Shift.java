@@ -29,7 +29,7 @@ public class Shift {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id")
+    @JoinColumn(name = "guard_id")
     private Employee guard;
 
     @ManyToOne(fetch = FetchType.LAZY)
