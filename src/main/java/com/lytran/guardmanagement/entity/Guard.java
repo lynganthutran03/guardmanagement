@@ -1,10 +1,20 @@
 package com.lytran.guardmanagement.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "employees")
-public class Employee {
+@Table(name = "guards")
+public class Guard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,13 +32,23 @@ public class Employee {
     @Column(name = "identity_number", unique = true, nullable = false)
     private String identityNumber;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    private Manager manager;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.GUARD;
 
-    public Employee() {}
+    @Column(name = "team")
+    private String team;
 
-    public Employee(String username, String password, String fullName, String identityNumber) {
+    @Column(name = "rota_group")
+    private Integer rotaGroup;
+
+    public Guard() {}
+
+    public Guard(String username, String password, String fullName, String identityNumber) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;
@@ -76,11 +96,35 @@ public class Employee {
         this.identityNumber = identityNumber;
     }
 
+    public Manager getManager() {
+        return manager;
+    }
+
+    public void setManager(Manager manager) {
+        this.manager = manager;
+    }
+
     public Role getRole() {
         return role;
     }
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getTeam() {
+        return team;
+    }
+
+    public void setTeam(String team) {
+        this.team = team;
+    }
+
+    public Integer getRotaGroup() {
+        return rotaGroup;
+    }
+
+    public void setRotaGroup(Integer rotaGroup) {
+        this.rotaGroup = rotaGroup;
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.lytran.guardmanagement.entity.Employee;
+import com.lytran.guardmanagement.entity.Guard;
 import com.lytran.guardmanagement.entity.Manager;
 import com.lytran.guardmanagement.security.CustomUserDetails;
 
@@ -19,12 +19,12 @@ public class UserController {
     public Map<String, Object> getUserInfo(Authentication auth) {
         CustomUserDetails user = (CustomUserDetails) auth.getPrincipal();
 
-        if (user.isEmployee()) {
-            Employee employeeEntity = user.getEmployee();
+        if (user.isGuard()) {
+            Guard guardEntity = user.getGuard();
             return Map.of(
-                "username", employeeEntity.getUsername(),
-                "fullName", employeeEntity.getFullName(),
-                "identityNumber", employeeEntity.getIdentityNumber(),
+                "username", guardEntity.getUsername(),
+                "fullName", guardEntity.getFullName(),
+                "identityNumber", guardEntity.getIdentityNumber(),
                 "role", "GUARD"
             );
         } else {

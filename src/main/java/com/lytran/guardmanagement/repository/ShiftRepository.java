@@ -20,4 +20,6 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
     List<Shift> findByGuardIdAndShiftDateBefore(Long guardId, LocalDate date);
 
     List<Shift> findByGuardId(Long guardId);
+
+    boolean existsByGuardIdAndShiftDateBetween(Long guardId, LocalDate startDate, LocalDate endDate);
 }

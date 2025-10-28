@@ -6,22 +6,22 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.lytran.guardmanagement.repository.EmployeeRepository;
+import com.lytran.guardmanagement.repository.GuardRepository;
 import com.lytran.guardmanagement.repository.ManagerRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired
-    private EmployeeRepository employeeRepository;
+    private GuardRepository guardRepository;
 
     @Autowired
     private ManagerRepository managerRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Try to find the user in employees first
-        return employeeRepository.findByUsername(username)
+        // Try to find the user in guards first
+        return guardRepository.findByUsername(username)
                 .<UserDetails>map(CustomUserDetails::new)
                 .orElseGet(() ->
                         // If not found in guards, try managers

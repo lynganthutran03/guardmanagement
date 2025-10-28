@@ -42,9 +42,9 @@ public class LoginController {
             String fullName;
             Role role;
 
-            if (userDetails.isEmployee()) {
-                fullName = userDetails.getEmployee().getFullName();
-                role = userDetails.getEmployee().getRole();
+            if (userDetails.isGuard()) {
+                fullName = userDetails.getGuard().getFullName();
+                role = userDetails.getGuard().getRole();
             } else {
                 fullName = userDetails.getManager().getFullName();
                 role = userDetails.getManager().getRole();

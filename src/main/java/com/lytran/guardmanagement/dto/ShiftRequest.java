@@ -6,17 +6,17 @@ import com.lytran.guardmanagement.model.Location;
 import com.lytran.guardmanagement.model.TimeSlot;
 
 public class ShiftRequest {
-    private Long employeeId;
+    private Long guardId;
     private LocalDate shiftDate;
     private TimeSlot timeSlot;
     private Location location;
 
-    public Long getEmployeeId() {
-        return employeeId;
+    public Long getGuardId() {
+        return guardId;
     }
 
-    public void setEmployeeId(Long employeeId) {
-        this.employeeId = employeeId;
+    public void setGuardId(Long guardId) {
+        this.guardId = guardId;
     }
 
     public LocalDate getShiftDate() {

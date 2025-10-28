@@ -7,14 +7,14 @@ public class ShiftDTO {
     private LocalDate shiftDate;
     private String timeSlot;
     private String location;
-    private Long employeeId;
+    private Long guardId;
 
-    public ShiftDTO(Long id, LocalDate shiftDate, String timeSlot, String location, Long employeeId) {
+    public ShiftDTO(Long id, LocalDate shiftDate, String timeSlot, String location, Long guardId) {
         this.id = id;
         this.shiftDate = shiftDate;
         this.timeSlot = timeSlot;
         this.location = location;
-        this.employeeId = employeeId;
+        this.guardId = guardId;
     }
 
     public ShiftDTO() {
@@ -53,11 +53,11 @@ public class ShiftDTO {
         this.location = location;
     }
 
-    public Long getEmployeeId() {
-        return employeeId;
+    public Long getGuardId() {
+        return guardId;
     }
 
-    public void setEmployeeId(Long employeeId) {
-        this.employeeId = employeeId;
+    public void setGuardId(Long guardId) {
+        this.guardId = guardId;
     }
 }
