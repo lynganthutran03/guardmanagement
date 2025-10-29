@@ -1,6 +1,7 @@
 package com.lytran.guardmanagement.controller;
 
 import java.security.Principal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -61,6 +62,36 @@ public class ShiftController {
         }
     }
 
+    @PostMapping("/manager/schedule/generate-week-for-team")
+    public ResponseEntity<?> generateWeekScheduleForTeam(
+            @RequestBody Map<String, String> payload,
+            Principal principal) {
+        try {
+            String team = payload.get("team");
+            LocalDate weekStartDate = LocalDate.parse(payload.get("weekStartDate"));
+            String managerUsername = principal.getName();
+
+            if (team == null || (!team.equals("A") && !team.equals("B"))) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid or missing team. Must be 'A' or 'B'."));
+            }
+
+            if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Week start date must be a Monday."));
+            }
+
+            shiftService.generateWeekForTeam(team, weekStartDate, managerUsername);
+
+            return ResponseEntity.ok(Map.of("message", "Schedule generated successfully for Team " + team + " for week starting " + weekStartDate));
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid weekStartDate format. Use YYYY-MM-DD."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        } catch (RuntimeException e) {
+            System.err.println("Error during team schedule generation: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during schedule generation. Check server logs."));
+        }
+    }
+
     @PostMapping("/manager/schedule/generate-week")
     public ResponseEntity<?> generateWeekSchedule(@RequestBody Map<String, String> payload, Principal principal) {
         try {
@@ -71,13 +102,15 @@ public class ShiftController {
             shiftService.generateWeekForGuard(guardId, weekStartDate, managerUsername);
             return ResponseEntity.ok(Map.of("message", "Schedule generated for the week " + guardId));
         } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid guardId format")); 
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid guardId format"));
         } catch (DateTimeParseException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid weekStartDate format")); 
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid weekStartDate format. Use YYYY-MM-DD."));
         } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("lịch làm việc trong tuần này")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
-
     }
 
     @GetMapping("/shifts")

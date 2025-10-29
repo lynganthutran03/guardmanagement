@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.lytran.guardmanagement.dto.ShiftDTO;
 import com.lytran.guardmanagement.dto.ShiftRequest;
@@ -41,6 +42,40 @@ public class ShiftService {
     private static final List<Location> ALL_LOCATIONS = Arrays.asList(Location.values());
     private static final int NUM_LOCATIONS = ALL_LOCATIONS.size();
 
+    @Transactional
+    public void generateWeekForTeam(String team, LocalDate weekStartDate, String managerUsername) {
+        if (!team.equals("A") && !team.equals("B")) {
+            throw new IllegalArgumentException("Invalid team specified. Must be 'A' or 'B'.");
+        }
+        if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY) {
+            throw new IllegalArgumentException("Week start date must be a Monday.");
+        }
+
+        List<Guard> guardsInTeam = guardRepository.findByTeam(team);
+        if (guardsInTeam.isEmpty()) {
+            System.out.println("No guards found for team " + team + ". No schedules generated.");
+            return;
+        }
+
+        Manager manager = managerRepository.findByUsername(managerUsername)
+             .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
+
+        List<String> errors = new ArrayList<>();
+        for (Guard guard : guardsInTeam) {
+            try {
+                generateWeekForGuard(guard.getId(), weekStartDate, managerUsername);
+            } catch (RuntimeException e) {
+                String errorMsg = "Error generating for guard ID " + guard.getId() + " (" + guard.getUsername() + "): " + e.getMessage();
+                System.err.println(errorMsg);
+                errors.add(errorMsg);
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            System.err.println("Completed generation for team " + team + " with " + errors.size() + " errors.");
+        }
+    }
+
     public void generateWeekForGuard(long guardId, LocalDate weekStartDate, String managerUsername) {
         if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY) {
             throw new IllegalArgumentException("Ngày đầu tiên trong tuần phải là thứ 2.");
@@ -53,13 +88,14 @@ public class ShiftService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
 
         if (guard.getTeam() == null || guard.getRotaGroup() == null) {
-            throw new IllegalArgumentException("Nhân viên này chưa được gán Đội hoặc Nhóm Rota.");
+            throw new IllegalArgumentException("Nhân viên này chưa được gán đội hoặc nhóm xoay ca.");
         }
 
         LocalDate weekEndDate = weekStartDate.plusDays(6);
         boolean alreadyAssigned = shiftRepository.existsByGuardIdAndShiftDateBetween(guardId, weekStartDate, weekEndDate);
         if (alreadyAssigned) {
-            throw new RuntimeException("Nhân viên đã có lịch làm việc trong tuần này.");
+            System.out.println("Nhân viên đã có ca trực trong tuần này. Bỏ qua tạo mới.");
+            return;
         }
 
         TimeSlot weekTimeSlot = getRotationTimeSlotForTeam(guard.getTeam(), weekStartDate);
@@ -69,7 +105,7 @@ public class ShiftService {
         for (int i = 0; i < 7; i++) {
             LocalDate shiftDate = weekStartDate.plusDays(i);
 
-            if (isDayOff(guard.getRotaGroup(), shiftDate.getDayOfWeek())) {
+            if (isSundayOffForRotation(guard, shiftDate)) {
                 continue;
             }
 
@@ -88,24 +124,29 @@ public class ShiftService {
         shiftRepository.saveAll(newShifts);
     }
 
-    private boolean isDayOff(int rotaGroup, DayOfWeek day) {
-        switch (rotaGroup) {
-            case 1: // Group 1 is off Mon, Tue
-                return day == DayOfWeek.MONDAY || day == DayOfWeek.TUESDAY;
-            case 2: // Group 2 is off Wed, Thu
-                return day == DayOfWeek.WEDNESDAY || day == DayOfWeek.THURSDAY;
-            case 3: // Group 3 is off Thu, Fri
-                return day == DayOfWeek.THURSDAY || day == DayOfWeek.FRIDAY;
-            case 4: // Group 4 is off Fri, Sat
-                return day == DayOfWeek.FRIDAY || day == DayOfWeek.SATURDAY;
-            case 5: // Group 5 is off Sat, Sun
-                return day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY;
-            case 6: // Group 6 is off Sun, Mon
-                return day == DayOfWeek.SUNDAY || day == DayOfWeek.MONDAY;
-            case 7: // Group 7 is off Tue, Wed (Staggered to balance the week)
-                return day == DayOfWeek.TUESDAY || day == DayOfWeek.WEDNESDAY;
-            default:
-                return false;
+    private boolean isSundayOffForRotation(Guard guard, LocalDate date) {
+        if(date.getDayOfWeek() != DayOfWeek.SUNDAY) {
+            return false;
+        }
+
+        long daysSinceAnchor = java.time.temporal.ChronoUnit.DAYS.between(ROTATION_ANCHOR_DATE, date);
+        int weekNumber = (int) (daysSinceAnchor / 7);
+        int cyclePosition = weekNumber % 4;
+
+        int guardGroup = guard.getRotaGroup();
+        if(cyclePosition == 1 && (guardGroup == 1 || guardGroup == 2)) {
+            return true;
+        }
+        else if(cyclePosition == 3 && (guardGroup == 3 || guardGroup == 4)) {
+            return true;
+        }
+        else if(cyclePosition == 0 && (guardGroup == 5 || guardGroup == 6)) {
+            return true;
+        }
+        else if(cyclePosition == 2 && (guardGroup == 7)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
