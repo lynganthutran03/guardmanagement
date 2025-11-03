@@ -8,6 +8,8 @@ public class ShiftDTO {
     private String timeSlot;
     private String location;
     private Long guardId;
+    private String guardName;
+    private String guardIdentityNumber;
 
     public ShiftDTO(Long id, LocalDate shiftDate, String timeSlot, String location, Long guardId) {
         this.id = id;
@@ -59,5 +61,21 @@ public class ShiftDTO {
 
     public void setGuardId(Long guardId) {
         this.guardId = guardId;
+    }
+
+    public String getGuardName() {
+        return guardName;
+    }
+
+    public void setGuardName(String guardName) {
+        this.guardName = guardName;
+    }
+
+    public String getGuardIdentityNumber() {
+        return guardIdentityNumber;
+    }
+
+    public void setGuardIdentityNumber(String guardIdentityNumber) {
+        this.guardIdentityNumber = guardIdentityNumber;
     }
 }

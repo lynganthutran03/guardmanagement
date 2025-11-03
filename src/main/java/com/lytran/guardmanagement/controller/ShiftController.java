@@ -139,4 +139,9 @@ public class ShiftController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/manager/all-shifts")
+    public ResponseEntity<List<ShiftDTO>> getAllShiftsForManager() {
+        List<ShiftDTO> shifts = shiftService.getAllShiftsForManager();
+        return ResponseEntity.ok(shifts);
+    }
 }

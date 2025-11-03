@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +59,7 @@ public class ShiftService {
         }
 
         Manager manager = managerRepository.findByUsername(managerUsername)
-             .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
 
         List<String> errors = new ArrayList<>();
         for (Guard guard : guardsInTeam) {
@@ -125,7 +126,7 @@ public class ShiftService {
     }
 
     private boolean isSundayOffForRotation(Guard guard, LocalDate date) {
-        if(date.getDayOfWeek() != DayOfWeek.SUNDAY) {
+        if (date.getDayOfWeek() != DayOfWeek.SUNDAY) {
             return false;
         }
 
@@ -134,16 +135,13 @@ public class ShiftService {
         int cyclePosition = weekNumber % 4;
 
         int guardGroup = guard.getRotaGroup();
-        if(cyclePosition == 1 && (guardGroup == 1 || guardGroup == 2)) {
+        if (cyclePosition == 1 && (guardGroup == 1 || guardGroup == 2)) {
             return true;
-        }
-        else if(cyclePosition == 3 && (guardGroup == 3 || guardGroup == 4)) {
+        } else if (cyclePosition == 3 && (guardGroup == 3 || guardGroup == 4)) {
             return true;
-        }
-        else if(cyclePosition == 0 && (guardGroup == 5 || guardGroup == 6)) {
+        } else if (cyclePosition == 0 && (guardGroup == 5 || guardGroup == 6)) {
             return true;
-        }
-        else if(cyclePosition == 2 && (guardGroup == 7)) {
+        } else if (cyclePosition == 2 && (guardGroup == 7)) {
             return true;
         } else {
             return false;
@@ -154,7 +152,7 @@ public class ShiftService {
         long daysSinceAnchor = java.time.temporal.ChronoUnit.DAYS.between(ROTATION_ANCHOR_DATE, date);
         int weekNumber = (int) (daysSinceAnchor / 7);
         int cyclePosition = weekNumber % 4;
-        
+
         boolean isTeamADay = (cyclePosition == 0 || cyclePosition == 1);
 
         if (team.equals("A")) {
@@ -165,15 +163,15 @@ public class ShiftService {
     }
 
     private Location findLocationForGuardOnDate(Guard guard, LocalDate date, TimeSlot timeSlot) {
-        int dayIndex = date.getDayOfWeek().getValue() -1;
-        int guardOffset = guard.getRotaGroup() -1;
-        
+        int dayIndex = date.getDayOfWeek().getValue() - 1;
+        int guardOffset = guard.getRotaGroup() - 1;
+
         for (int i = 0; i < NUM_LOCATIONS; i++) {
             int locationIndex = (dayIndex + guardOffset + i) % NUM_LOCATIONS;
             Location potentialLocation = ALL_LOCATIONS.get(locationIndex);
 
             boolean taken = shiftRepository.existsByShiftDateAndTimeSlotAndLocation(date, timeSlot, potentialLocation);
-            
+
             if (!taken) {
                 return potentialLocation;
             }
@@ -197,6 +195,8 @@ public class ShiftService {
 
         if (shift.getGuard() != null) {
             dto.setGuardId(shift.getGuard().getId());
+            dto.setGuardName(shift.getGuard().getFullName());
+            dto.setGuardIdentityNumber(shift.getGuard().getIdentityNumber());
         }
 
         return dto;
@@ -324,5 +324,13 @@ public class ShiftService {
 
         shift.setGuard(guard);
         shiftRepository.save(shift);
+    }
+
+    public List<ShiftDTO> getAllShiftsForManager() {
+        LocalDate today = LocalDate.now();
+        List<Shift> shifts = shiftRepository.findByGuardIsNotNullAndShiftDateBeforeOrderByShiftDateDesc(today);
+        return shifts.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
