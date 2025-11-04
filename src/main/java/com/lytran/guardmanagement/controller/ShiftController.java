@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lytran.guardmanagement.dto.GuardDTO;
 import com.lytran.guardmanagement.dto.ShiftDTO;
 import com.lytran.guardmanagement.dto.ShiftRequest;
 import com.lytran.guardmanagement.model.Shift;
@@ -142,6 +143,22 @@ public class ShiftController {
     @GetMapping("/manager/all-shifts")
     public ResponseEntity<List<ShiftDTO>> getAllShiftsForManager() {
         List<ShiftDTO> shifts = shiftService.getAllShiftsForManager();
+        return ResponseEntity.ok(shifts);
+    }
+
+    @GetMapping("/manager/guards/available")
+    public ResponseEntity<List<GuardDTO>> getAvailableGuards(@RequestParam("date") LocalDate date) {
+        List<GuardDTO> availableGuards = shiftService.getAvailableGuardsForShift(date);
+        return ResponseEntity.ok(availableGuards);
+    }
+
+    @GetMapping("/manager/shifts/by-guard")
+    public ResponseEntity<List<ShiftDTO>> getShiftsForGuardInRange(
+            @RequestParam("guardId") Long guardId,
+            @RequestParam("startDate") LocalDate startDate,
+            @RequestParam("endDate") LocalDate endDate) {
+        
+        List<ShiftDTO> shifts = shiftService.getShiftsForGuardInRange(guardId, startDate, endDate);
         return ResponseEntity.ok(shifts);
     }
 }

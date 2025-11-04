@@ -47,14 +47,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests()
                 .requestMatchers("/api/login").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/shifts/accepted-today").hasRole("GUARD")
-                .requestMatchers("/api/leave-requests/request").hasRole("GUARD")
-                .requestMatchers("/api/leave-requests/history").hasRole("GUARD")
-                .requestMatchers("/api/leave-requests/pending").hasRole("MANAGER")
-                .requestMatchers("/api/leave-requests/approve/**").hasRole("MANAGER")
-                .requestMatchers("/api/leave-requests/deny/**").hasRole("MANAGER")
-                .requestMatchers("/api/leave-requests/approved").hasRole("MANAGER")
-                .requestMatchers("/api/manager/all-shifts").hasRole("MANAGER")
+                .requestMatchers("/api/shifts/**",
+                                            "/api/leave-requests/request",
+                                            "/api/leave-requests/history").hasRole("GUARD")
+                .requestMatchers("/api/guards",
+                                            "/api/manager/**",
+                                            "/api/leave-requests/pending",
+                                            "/api/leave-requests/approve/**",
+                                            "/api/leave-requests/deny/**",
+                                            "/api/leave-requests/approved").hasRole("MANAGER")
                 .anyRequest().authenticated()
                 .and()
                 .authenticationProvider(authProvider())

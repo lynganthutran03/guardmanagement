@@ -15,6 +15,8 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     boolean existsByShiftDateAndTimeSlotAndLocation(LocalDate date, TimeSlot timeSlot, Location location);
 
+    boolean existsByGuardIdAndShiftDateBetween(Long guardId, LocalDate startDate, LocalDate endDate);
+
     List<Shift> findByGuardIdAndShiftDate(Long guardId, LocalDate date);
 
     List<Shift> findByGuardIdAndShiftDateBefore(Long guardId, LocalDate date);
@@ -23,5 +25,7 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     List<Shift> findByGuardIsNotNullAndShiftDateBeforeOrderByShiftDateDesc(LocalDate date);
 
-    boolean existsByGuardIdAndShiftDateBetween(Long guardId, LocalDate startDate, LocalDate endDate);
+    List<Shift> findAllByGuardIdAndShiftDateBetween(Long guardId, LocalDate startDate, LocalDate endDate);
+
+    List<Shift> findByGuardIsNullAndShiftDateGreaterThanEqualOrderByShiftDateAsc(LocalDate date);
 }

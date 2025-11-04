@@ -9,26 +9,38 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.lytran.guardmanagement.dto.GuardDTO;
 import com.lytran.guardmanagement.dto.ShiftDTO;
 import com.lytran.guardmanagement.dto.ShiftRequest;
 import com.lytran.guardmanagement.entity.Guard;
 import com.lytran.guardmanagement.entity.Manager;
+import com.lytran.guardmanagement.model.LeaveStatus;
 import com.lytran.guardmanagement.model.Location;
 import com.lytran.guardmanagement.model.Shift;
 import com.lytran.guardmanagement.model.TimeSlot;
 import com.lytran.guardmanagement.repository.GuardRepository;
+import com.lytran.guardmanagement.repository.LeaveRequestRepository;
 import com.lytran.guardmanagement.repository.ManagerRepository;
 import com.lytran.guardmanagement.repository.ShiftRepository;
 
 @Service
 public class ShiftService {
 
+    @Autowired
     private final ShiftRepository shiftRepository;
+
+    @Autowired
     private final GuardRepository guardRepository;
+
+    @Autowired
     private final ManagerRepository managerRepository;
+
+    @Autowired
+    private LeaveRequestRepository leaveRequestRepository;
 
     public ShiftService(ShiftRepository shiftRepository, GuardRepository guardRepository,
             ManagerRepository managerRepository) {
@@ -332,5 +344,43 @@ public class ShiftService {
         return shifts.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<ShiftDTO> getShiftsForGuardInRange(Long guardId, LocalDate startDate, LocalDate endDate) {
+        List<Shift> shifts = shiftRepository.findAllByGuardIdAndShiftDateBetween(guardId, startDate, endDate);
+        
+        return shifts.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<GuardDTO> getAvailableGuardsForShift(LocalDate shiftDate) {
+        List<Guard> allGuards = guardRepository.findAll();
+
+        List<GuardDTO> availableGuards = allGuards.stream()
+                .filter(guard -> {
+                    boolean hasShift = shiftRepository.existsByGuardIdAndShiftDate(guard.getId(), shiftDate);
+
+                    boolean onLeave = leaveRequestRepository.existsByGuardIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                            guard.getId(),
+                            LeaveStatus.APPROVED,
+                            shiftDate,
+                            shiftDate
+                    );
+
+                    return !hasShift && !onLeave;
+                })
+                .map(guard -> {
+                    GuardDTO dto = new GuardDTO();
+                    dto.setId(guard.getId());
+                    dto.setFullName(guard.getFullName());
+                    dto.setIdentityNumber(guard.getIdentityNumber());
+                    dto.setTeam(guard.getTeam());
+                    dto.setRotaGroup(guard.getRotaGroup());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        return availableGuards;
     }
 }

@@ -21,6 +21,7 @@ import com.lytran.guardmanagement.repository.ManagerRepository;
 
 @Service
 public class LeaveRequestService {
+
     @Autowired
     private LeaveRequestRepository leaveRequestRepository;
 
@@ -46,13 +47,13 @@ public class LeaveRequestService {
         leaveRequest.setRequestedAt(LocalDateTime.now());
 
         LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
-        
+
         return new LeaveRequestResponseDTO(savedRequest);
     }
 
     public List<LeaveRequestResponseDTO> getPendingRequests() {
         List<LeaveRequest> requests = leaveRequestRepository.findByStatusOrderByRequestedAtAsc(LeaveStatus.PENDING);
-        
+
         return requests.stream()
                 .map(LeaveRequestResponseDTO::new)
                 .collect(Collectors.toList());
@@ -61,9 +62,9 @@ public class LeaveRequestService {
     public List<LeaveRequestResponseDTO> getRequestHistoryForGuard(String guardUsername) {
         Guard guard = guardRepository.findByUsername(guardUsername)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bảo vệ."));
-        
+
         List<LeaveRequest> requests = leaveRequestRepository.findByGuardIdOrderByRequestedAtDesc(guard.getId());
-        
+
         return requests.stream()
                 .map(LeaveRequestResponseDTO::new)
                 .collect(Collectors.toList());
@@ -71,7 +72,21 @@ public class LeaveRequestService {
 
     @Transactional
     public LeaveRequestResponseDTO approveRequest(Long requestId, String managerUsername) {
-        return updateRequestStatus(requestId, managerUsername, LeaveStatus.APPROVED);
+        LeaveRequest request = leaveRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn nghỉ phép."));
+        Manager manager = managerRepository.findByUsername(managerUsername)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
+
+        if (request.getStatus() != LeaveStatus.PENDING) {
+            throw new RuntimeException("Đơn này đã được xử lý.");
+        }
+
+        request.setStatus(LeaveStatus.APPROVED);
+        request.setManager(manager);
+        request.setReviewedAt(LocalDateTime.now());
+        LeaveRequest updatedRequest = leaveRequestRepository.save(request);
+
+        return new LeaveRequestResponseDTO(updatedRequest);
     }
 
     @Transactional
@@ -100,7 +115,7 @@ public class LeaveRequestService {
 
     public List<LeaveRequestResponseDTO> getApprovedRequests() {
         List<LeaveRequest> requests = leaveRequestRepository.findByStatusOrderByRequestedAtAsc(LeaveStatus.APPROVED);
-        
+
         return requests.stream()
                 .map(LeaveRequestResponseDTO::new)
                 .collect(Collectors.toList());

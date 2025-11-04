@@ -1,5 +1,6 @@
 package com.lytran.guardmanagement.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
     List<LeaveRequest> findByGuardIdOrderByRequestedAtDesc(Long guardId);
 
     List<LeaveRequest> findByStatusOrderByRequestedAtAsc(LeaveStatus status);
+
+    boolean existsByGuardIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            Long guardId, LeaveStatus status, LocalDate date, LocalDate dateAgain
+    );
 }
