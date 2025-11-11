@@ -56,6 +56,8 @@ public class SecurityConfig {
                                             "/api/leave-requests/approve/**",
                                             "/api/leave-requests/deny/**",
                                             "/api/leave-requests/approved").hasRole("MANAGER")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/admin/locations", "/api/admin/timeslots").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationProvider(authProvider())

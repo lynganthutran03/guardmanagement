@@ -5,9 +5,9 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.lytran.guardmanagement.model.Location;
+import com.lytran.guardmanagement.entity.Location;
+import com.lytran.guardmanagement.entity.TimeSlot;
 import com.lytran.guardmanagement.model.Shift;
-import com.lytran.guardmanagement.model.TimeSlot;
 
 public interface ShiftRepository extends JpaRepository<Shift, Long> {
 

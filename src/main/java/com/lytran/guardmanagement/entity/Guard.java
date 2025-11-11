@@ -46,7 +46,8 @@ public class Guard {
     @Column(name = "rota_group")
     private Integer rotaGroup;
 
-    public Guard() {}
+    public Guard() {
+    }
 
     public Guard(String username, String password, String fullName, String identityNumber) {
         this.username = username;

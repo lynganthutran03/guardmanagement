@@ -35,21 +35,23 @@ public class LoginController {
 
             Authentication auth = authenticationManager.authenticate(authRequest);
             SecurityContextHolder.getContext().setAuthentication(auth);
-            request.getSession(true);  // Create session
+            request.getSession(true);
 
             CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
 
             String fullName;
             Role role;
 
-            if (userDetails.isGuard()) {
-                fullName = userDetails.getGuard().getFullName();
-                role = userDetails.getGuard().getRole();
-            } else {
+            if (userDetails.isAdmin()) {
+                fullName = userDetails.getAdmin().getFullName();
+                role = userDetails.getAdmin().getRole();
+            } else if (userDetails.isManager()) {
                 fullName = userDetails.getManager().getFullName();
                 role = userDetails.getManager().getRole();
+            } else {
+                fullName = userDetails.getGuard().getFullName();
+                role = userDetails.getGuard().getRole();
             }
-
             return ResponseEntity.ok(new LoginResponse(true, "Login successful", fullName, role));
 
         } catch (AuthenticationException e) {

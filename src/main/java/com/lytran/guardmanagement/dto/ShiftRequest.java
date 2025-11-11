@@ -2,8 +2,8 @@ package com.lytran.guardmanagement.dto;
 
 import java.time.LocalDate;
 
-import com.lytran.guardmanagement.model.Location;
-import com.lytran.guardmanagement.model.TimeSlot;
+import com.lytran.guardmanagement.entity.Location;
+import com.lytran.guardmanagement.entity.TimeSlot;
 
 public class ShiftRequest {
     private Long guardId;

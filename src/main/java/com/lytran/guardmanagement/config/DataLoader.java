@@ -1,24 +1,33 @@
 package com.lytran.guardmanagement.config;
 
+import java.time.LocalTime;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.lytran.guardmanagement.entity.Guard;
-import com.lytran.guardmanagement.entity.Manager;
-import com.lytran.guardmanagement.repository.GuardRepository;
-import com.lytran.guardmanagement.repository.ManagerRepository;
+import com.lytran.guardmanagement.entity.Admin;
+import com.lytran.guardmanagement.entity.Location;
+import com.lytran.guardmanagement.entity.TimeSlot;
+import com.lytran.guardmanagement.repository.AdminRepository;
+import com.lytran.guardmanagement.repository.LocationRepository;
+import com.lytran.guardmanagement.repository.TimeSlotRepository;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class DataLoader {
-    @Autowired
-    private GuardRepository guardRepository;
 
     @Autowired
-    private ManagerRepository managerRepository;
+    private AdminRepository adminRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
+
+    @Autowired
+    private TimeSlotRepository timeSlotRepository;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -26,43 +35,39 @@ public class DataLoader {
     @PostConstruct
     @Transactional
     public void init() {
-        Manager defaultManager = null;
-
-        if(managerRepository.count() == 0) {
-            defaultManager = new Manager(
-                "manager1",
-                passwordEncoder.encode("Manager123"),
-                "Lý Trần Thu Ngân",
-                "M001"
+        if (adminRepository.count() == 0) {
+            Admin admin = new Admin(
+                    "admin",
+                    passwordEncoder.encode("admin123"),
+                    "Quản Trị Viên"
             );
-            managerRepository.save(defaultManager);
-        } else {
-            defaultManager = managerRepository.findByUsername("manager1")
-                .orElseThrow(() -> new RuntimeException("Default manager 'manager1' not found!"));
+            adminRepository.save(admin);
         }
 
-        if(guardRepository.count() == 0 && defaultManager != null) {
-            for(int i = 1; i <= 28; i++) {
-                String id = String.format("G%03d", i);
-                Guard guard = new Guard (
-                    "guard" + i,
-                    passwordEncoder.encode("Guard123"),
-                    "Guard" + i,
-                    id
-                );
-                if(i <= 14) {
-                    guard.setTeam("A");
-                } else {
-                    guard.setTeam("B");
-                }
-                guard.setRotaGroup(((i - 1) % 7) + 1);
+        if (timeSlotRepository.count() == 0) {
+            TimeSlot dayShift = new TimeSlot();
+            dayShift.setName("DAY_SHIFT");
+            dayShift.setStartTime(LocalTime.of(7, 30));
+            dayShift.setEndTime(LocalTime.of(14, 30));
+            timeSlotRepository.save(dayShift);
 
-                guard.setManager(defaultManager);
+            TimeSlot nightShift = new TimeSlot();
+            nightShift.setName("NIGHT_SHIFT");
+            nightShift.setStartTime(LocalTime.of(14, 30));
+            nightShift.setEndTime(LocalTime.of(21, 30));
+            timeSlotRepository.save(nightShift);
+        }
 
-                guardRepository.save(guard);
+        if (locationRepository.count() == 0) {
+            List<String> locations = List.of(
+                    "Block 3", "Block 4", "Block 5", "Block 6", "Block 8",
+                    "Block 10", "Block 11", "Gate 1", "Gate 2", "Gate 3"
+            );
+            for (String locName : locations) {
+                Location loc = new Location();
+                loc.setName(locName);
+                locationRepository.save(loc);
             }
-        } else if (defaultManager == null) {
-             System.err.println("DataLoader: Could not find or create a default manager. Guards will not be created.");
         }
     }
 }

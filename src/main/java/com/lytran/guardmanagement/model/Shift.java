@@ -3,7 +3,9 @@ package com.lytran.guardmanagement.model;
 import java.time.LocalDate;
 
 import com.lytran.guardmanagement.entity.Guard;
+import com.lytran.guardmanagement.entity.Location;
 import com.lytran.guardmanagement.entity.Manager;
+import com.lytran.guardmanagement.entity.TimeSlot;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,7 +22,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "shifts", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"shift_date", "time_slot", "location"})
+    @UniqueConstraint(columnNames = {"shift_date", "timeslot_id", "location_id"})
 })
 public class Shift {
 
@@ -39,12 +41,12 @@ public class Shift {
     @Column(name = "shift_date", nullable = false)
     private LocalDate shiftDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "time_slot", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "timeslot_id", nullable = false)
     private TimeSlot timeSlot;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 
     public Long getId() {
