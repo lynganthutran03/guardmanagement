@@ -49,7 +49,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/shifts/**",
                                             "/api/leave-requests/request",
-                                            "/api/leave-requests/history").hasRole("GUARD")
+                                            "/api/leave-requests/history",
+                                            "/api/attendance/check-in").hasRole("GUARD")
                 .requestMatchers("/api/guards",
                                             "/api/manager/**",
                                             "/api/leave-requests/pending",
