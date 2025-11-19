@@ -1,4 +1,3 @@
-// Trong file: guardmanagement/service/ShiftService.java
 package com.lytran.guardmanagement.service;
 
 import java.time.DayOfWeek;
@@ -8,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired; // Cần cho hàm random cũ (nếu còn dùng)
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -108,9 +107,7 @@ public class ShiftService {
 
         for (int i = 0; i < 7; i++) {
             LocalDate shiftDate = weekStartDate.plusDays(i);
-            if (isSundayOffForRotation(guard, shiftDate)) {
-                continue;
-            }
+
             Shift shift = new Shift();
             shift.setGuard(guard);
             shift.setManager(manager);
@@ -121,27 +118,6 @@ public class ShiftService {
             newShifts.add(shift);
         }
         shiftRepository.saveAll(newShifts);
-    }
-
-    private boolean isSundayOffForRotation(Guard guard, LocalDate date) {
-        if (date.getDayOfWeek() != DayOfWeek.SUNDAY) {
-            return false;
-        }
-        long daysSinceAnchor = java.time.temporal.ChronoUnit.DAYS.between(ROTATION_ANCHOR_DATE, date);
-        int weekNumber = (int) (daysSinceAnchor / 7);
-        int cyclePosition = weekNumber % 4;
-        int guardGroup = guard.getRotaGroup();
-        if (cyclePosition == 1 && (guardGroup == 1 || guardGroup == 2)) {
-            return true;
-        } else if (cyclePosition == 3 && (guardGroup == 3 || guardGroup == 4)) {
-            return true;
-        } else if (cyclePosition == 0 && (guardGroup == 5 || guardGroup == 6)) {
-            return true;
-        } else if (cyclePosition == 2 && (guardGroup == 7)) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private TimeSlot getRotationTimeSlotForTeam(String team, LocalDate date) {
