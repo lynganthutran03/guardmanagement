@@ -27,9 +27,9 @@ public class AttendanceController {
         try {
             String clientIp = getClientIp(request);
 
-            attendanceService.checkIn(principal.getName(), clientIp);
+            String resultMessage = attendanceService.checkIn(principal.getName(), clientIp);
 
-            return ResponseEntity.ok(Map.of("message", "Điểm danh thành công!"));
+            return ResponseEntity.ok(Map.of("message", resultMessage));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }

@@ -33,7 +33,7 @@ public class AttendanceService {
     private List<String> allowedIpPrefixes;
 
     @Transactional
-    public void checkIn(String username, String clientId) {
+    public String checkIn(String username, String clientId) {
         boolean isAllowed = false;
         for (String prefix : allowedIpPrefixes) {
             if (clientId.trim().startsWith(prefix.trim())) {
@@ -77,12 +77,17 @@ public class AttendanceService {
         history.setShift(currentShift);
         history.setCompleteAt(LocalDateTime.now());
 
+        String message = "Điểm danh thành công!";
+
         if (now.isAfter(currentShift.getTimeSlot().getStartTime().plusMinutes(15))) {
             history.setAttendanceStatus("LATE");
+            message = "Điểm danh thành công, ghi nhận đi trễ.";
         } else {
             history.setAttendanceStatus("PRESENT");
         }
 
         shiftHistoryRepository.save(history);
+
+        return message;
     }
 }

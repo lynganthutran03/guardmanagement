@@ -1,6 +1,8 @@
 package com.lytran.guardmanagement.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public class ShiftDTO {
     private Long id;
@@ -10,6 +12,10 @@ public class ShiftDTO {
     private Long guardId;
     private String guardName;
     private String guardIdentityNumber;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private String attendanceStatus;
+    private LocalDateTime checkInTime;
 
     public ShiftDTO(Long id, LocalDate shiftDate, String timeSlot, String location, Long guardId) {
         this.id = id;
@@ -77,5 +83,37 @@ public class ShiftDTO {
 
     public void setGuardIdentityNumber(String guardIdentityNumber) {
         this.guardIdentityNumber = guardIdentityNumber;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getAttendanceStatus() {
+        return attendanceStatus;
+    }
+
+    public void setAttendanceStatus(String attendanceStatus) {
+        this.attendanceStatus = attendanceStatus;
+    }
+
+    public LocalDateTime getCheckInTime() {
+        return checkInTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.checkInTime = checkInTime;
     }
 }

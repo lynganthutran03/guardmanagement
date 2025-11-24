@@ -17,6 +17,7 @@ import com.lytran.guardmanagement.dto.ShiftRequest;
 import com.lytran.guardmanagement.entity.Guard;
 import com.lytran.guardmanagement.entity.Location;
 import com.lytran.guardmanagement.entity.Manager;
+import com.lytran.guardmanagement.entity.ShiftHistory;
 import com.lytran.guardmanagement.entity.TimeSlot;
 import com.lytran.guardmanagement.model.LeaveStatus;
 import com.lytran.guardmanagement.model.Shift;
@@ -24,11 +25,13 @@ import com.lytran.guardmanagement.repository.GuardRepository;
 import com.lytran.guardmanagement.repository.LeaveRequestRepository;
 import com.lytran.guardmanagement.repository.LocationRepository;
 import com.lytran.guardmanagement.repository.ManagerRepository;
+import com.lytran.guardmanagement.repository.ShiftHistoryRepository;
 import com.lytran.guardmanagement.repository.ShiftRepository;
 import com.lytran.guardmanagement.repository.TimeSlotRepository;
 
 @Service
 public class ShiftService {
+
     @Autowired
     private ShiftRepository shiftRepository;
 
@@ -43,25 +46,36 @@ public class ShiftService {
 
     @Autowired
     private LocationRepository locationRepository;
-    
+
     @Autowired
     private TimeSlotRepository timeSlotRepository;
+
+    @Autowired
+    private ShiftHistoryRepository shiftHistoryRepository;
 
     private static final LocalDate ROTATION_ANCHOR_DATE = LocalDate.of(2024, 1, 1);
 
     @Transactional
     public void generateWeekForTeam(String team, LocalDate weekStartDate, String managerUsername) {
         if (!team.equals("A") && !team.equals("B")) {
-            throw new IllegalArgumentException("Invalid team specified. Must be 'A' or 'B'.");
+            throw new IllegalArgumentException("Lỗi team (phải là team A hoặc team B)");
         }
+
         if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY) {
-            throw new IllegalArgumentException("Week start date must be a Monday.");
+            throw new IllegalArgumentException("Hãy chọn thứ 2 trong tuần");
         }
+
+        LocalDate currentWeekStart = LocalDate.now().with(DayOfWeek.MONDAY);
+        if (weekStartDate.isBefore(currentWeekStart)) {
+            throw new IllegalArgumentException("Không thể tạo lịch cho tuần trong quá khứ.");
+        }
+
         List<Guard> guardsInTeam = guardRepository.findByTeam(team);
         if (guardsInTeam.isEmpty()) {
             System.out.println("No guards found for team " + team + ". No schedules generated.");
             return;
         }
+        
         Manager manager = managerRepository.findByUsername(managerUsername)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
         List<String> errors = new ArrayList<>();
@@ -185,8 +199,29 @@ public class ShiftService {
     }
 
     public List<ShiftDTO> getShiftHistory(Long guardId) {
-        return shiftRepository.findByGuardIdAndShiftDateBefore(guardId, LocalDate.now()).stream()
-                .map(this::convertToDTO)
+        List<Shift> shifts = shiftRepository.findByGuardIdAndShiftDateBefore(guardId, LocalDate.now());
+
+        return shifts.stream()
+                .map(shift -> {
+                    ShiftDTO dto = convertToDTO(shift);
+
+                    if (shift.getTimeSlot() != null) {
+                        dto.setStartTime(shift.getTimeSlot().getStartTime());
+                        dto.setEndTime(shift.getTimeSlot().getEndTime());
+                    }
+
+                    Optional<ShiftHistory> historyOpt = shiftHistoryRepository.findByShiftId(shift.getId());
+
+                    if (historyOpt.isPresent()) {
+                        ShiftHistory history = historyOpt.get();
+                        dto.setAttendanceStatus(history.getAttendanceStatus());
+                        dto.setCheckInTime(history.getCompleteAt());
+                    } else {
+                        dto.setAttendanceStatus("ABSENT");
+                    }
+
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -262,5 +297,9 @@ public class ShiftService {
                 })
                 .collect(Collectors.toList());
         return availableGuards;
+    }
+
+    public boolean checkScheduleExists(String team, LocalDate start, LocalDate end) {
+        return shiftRepository.existsByTeamAndDateRange(team, start, end);
     }
 }

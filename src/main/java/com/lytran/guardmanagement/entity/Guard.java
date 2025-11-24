@@ -46,6 +46,9 @@ public class Guard {
     @Column(name = "rota_group")
     private Integer rotaGroup;
 
+    @Column(name = "salary_per_hour")
+    private Double salaryPerHour;
+
     public Guard() {
     }
 
@@ -127,5 +130,13 @@ public class Guard {
 
     public void setRotaGroup(Integer rotaGroup) {
         this.rotaGroup = rotaGroup;
+    }
+
+    public Double getSalaryPerHour() {
+        return salaryPerHour;
+    }
+
+    public void setSalaryPerHour(Double salaryPerHour) {
+        this.salaryPerHour = salaryPerHour;
     }
 }

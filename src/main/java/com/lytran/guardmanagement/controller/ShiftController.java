@@ -114,6 +114,21 @@ public class ShiftController {
         }
     }
 
+    @GetMapping("/manager/schedule/check-existence")
+    public ResponseEntity<Boolean> checkScheduleExistence(
+        @RequestParam("team") String team,
+        @RequestParam("weekStartDate") String weekStartDateStr
+    ) {
+        try {
+            LocalDate start = LocalDate.parse(weekStartDateStr);
+            LocalDate end = start.plusDays(6);
+            boolean exists = shiftService.checkScheduleExists(team, start, end);
+            return ResponseEntity.ok(exists);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(false);
+        }
+    }
+
     @GetMapping("/shifts")
     public List<ShiftDTO> getShiftsByDate(@RequestParam("date") LocalDate date, Principal principal) {
         Long guardId = shiftService.getGuardIdByUsername(principal.getName());

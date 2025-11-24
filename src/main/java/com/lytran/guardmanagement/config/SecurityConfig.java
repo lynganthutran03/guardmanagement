@@ -50,7 +50,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/shifts/**",
                                             "/api/leave-requests/request",
                                             "/api/leave-requests/history",
-                                            "/api/attendance/check-in").hasRole("GUARD")
+                                            "/api/attendance/check-in",
+                                            "/api/my-payroll").hasRole("GUARD")
                 .requestMatchers("/api/guards",
                                             "/api/manager/**",
                                             "/api/leave-requests/pending",
