@@ -30,7 +30,11 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     List<Shift> findByGuardIsNotNullAndShiftDateBeforeOrderByShiftDateDesc(LocalDate date);
 
-    List<Shift> findAllByGuardIdAndShiftDateBetween(Long guardId, LocalDate startDate, LocalDate endDate);
+    List<Shift> findByGuardIdAndShiftDateBetween(Long guardId, LocalDate startDate, LocalDate endDate);
 
     List<Shift> findByGuardIsNullAndShiftDateGreaterThanEqualOrderByShiftDateAsc(LocalDate date);
+
+    List<Shift> findAllByShiftDateAndGuardIsNotNull(LocalDate date);
+
+    List<Shift> findAllByShiftDateBetween(LocalDate startDate, LocalDate endDate);
 }

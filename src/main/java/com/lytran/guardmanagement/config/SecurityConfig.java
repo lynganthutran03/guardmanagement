@@ -51,13 +51,15 @@ public class SecurityConfig {
                                             "/api/leave-requests/request",
                                             "/api/leave-requests/history",
                                             "/api/attendance/check-in",
-                                            "/api/my-payroll").hasRole("GUARD")
+                                            "/api/my-payroll",
+                                            "/api/dashboard/guard").hasRole("GUARD")
                 .requestMatchers("/api/guards",
                                             "/api/manager/**",
                                             "/api/leave-requests/pending",
                                             "/api/leave-requests/approve/**",
                                             "/api/leave-requests/deny/**",
-                                            "/api/leave-requests/approved").hasRole("MANAGER")
+                                            "/api/leave-requests/approved",
+                                            "/api/dashboard/manager").hasRole("MANAGER")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/admin/locations", "/api/admin/timeslots").authenticated()
                 .anyRequest().authenticated()

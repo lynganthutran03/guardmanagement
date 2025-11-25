@@ -75,7 +75,7 @@ public class ShiftService {
             System.out.println("No guards found for team " + team + ". No schedules generated.");
             return;
         }
-        
+
         Manager manager = managerRepository.findByUsername(managerUsername)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
         List<String> errors = new ArrayList<>();
@@ -262,12 +262,29 @@ public class ShiftService {
         LocalDate today = LocalDate.now();
         List<Shift> shifts = shiftRepository.findByGuardIsNotNullAndShiftDateBeforeOrderByShiftDateDesc(today);
         return shifts.stream()
-                .map(this::convertToDTO)
+                .map(shift -> {
+                    ShiftDTO dto = convertToDTO(shift);
+                    
+                    if (shift.getTimeSlot() != null) {
+                        dto.setStartTime(shift.getTimeSlot().getStartTime());
+                        dto.setEndTime(shift.getTimeSlot().getEndTime());
+                    }
+
+                    var historyOpt = shiftHistoryRepository.findByShiftId(shift.getId());
+                    
+                    if (historyOpt.isPresent()) {
+                        dto.setAttendanceStatus(historyOpt.get().getAttendanceStatus());
+                        dto.setCheckInTime(historyOpt.get().getCompleteAt());
+                    } else {
+                        dto.setAttendanceStatus("ABSENT");
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     public List<ShiftDTO> getShiftsForGuardInRange(Long guardId, LocalDate startDate, LocalDate endDate) {
-        List<Shift> shifts = shiftRepository.findAllByGuardIdAndShiftDateBetween(guardId, startDate, endDate);
+        List<Shift> shifts = shiftRepository.findByGuardIdAndShiftDateBetween(guardId, startDate, endDate);
         return shifts.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
