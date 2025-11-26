@@ -2,6 +2,7 @@ package com.lytran.guardmanagement.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,9 @@ public class LeaveRequestService {
     @Autowired
     private ManagerRepository managerRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional
     public LeaveRequestResponseDTO createLeaveRequest(LeaveRequestDTO requestDTO, String guardUsername) {
         Guard guard = guardRepository.findByUsername(guardUsername)
@@ -47,6 +51,14 @@ public class LeaveRequestService {
         leaveRequest.setRequestedAt(LocalDateTime.now());
 
         LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
+
+        if (guard.getManager() != null) {
+            notificationService.createNotificationForManager(
+                    guard.getManager(),
+                    "Bảo vệ " + guard.getFullName() + " vừa gửi đơn xin nghỉ phép mới.",
+                    savedRequest.getId()
+            );
+        }
 
         return new LeaveRequestResponseDTO(savedRequest);
     }
@@ -70,31 +82,7 @@ public class LeaveRequestService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public LeaveRequestResponseDTO approveRequest(Long requestId, String managerUsername) {
-        LeaveRequest request = leaveRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn nghỉ phép."));
-        Manager manager = managerRepository.findByUsername(managerUsername)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy quản lý."));
-
-        if (request.getStatus() != LeaveStatus.PENDING) {
-            throw new RuntimeException("Đơn này đã được xử lý.");
-        }
-
-        request.setStatus(LeaveStatus.APPROVED);
-        request.setManager(manager);
-        request.setReviewedAt(LocalDateTime.now());
-        LeaveRequest updatedRequest = leaveRequestRepository.save(request);
-
-        return new LeaveRequestResponseDTO(updatedRequest);
-    }
-
-    @Transactional
-    public LeaveRequestResponseDTO denyRequest(Long requestId, String managerUsername) {
-        return updateRequestStatus(requestId, managerUsername, LeaveStatus.DENIED);
-    }
-
-    private LeaveRequestResponseDTO updateRequestStatus(Long requestId, String managerUsername, LeaveStatus newStatus) {
+    private LeaveRequest processRequest(Long requestId, String managerUsername, LeaveStatus newStatus) {
         LeaveRequest request = leaveRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn nghỉ phép."));
 
@@ -109,7 +97,34 @@ public class LeaveRequestService {
         request.setManager(manager);
         request.setReviewedAt(LocalDateTime.now());
 
-        LeaveRequest updatedRequest = leaveRequestRepository.save(request);
+        return leaveRequestRepository.save(request);
+    }
+
+    @Transactional
+    public LeaveRequestResponseDTO approveRequest(Long requestId, String managerUsername) {
+        LeaveRequest updatedRequest = processRequest(requestId, managerUsername, LeaveStatus.APPROVED);
+        String dateStr = updatedRequest.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        notificationService.createNotificationForGuard(
+                updatedRequest.getGuard(),
+                "Đơn nghỉ phép " + dateStr + " đã được duyệt.",
+                updatedRequest.getId(),
+                null
+        );
+
+        return new LeaveRequestResponseDTO(updatedRequest);
+    }
+
+    @Transactional
+    public LeaveRequestResponseDTO denyRequest(Long requestId, String managerUsername) {
+        LeaveRequest updatedRequest = processRequest(requestId, managerUsername, LeaveStatus.DENIED);
+        String dateStr = updatedRequest.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        notificationService.createNotificationForGuard(
+                updatedRequest.getGuard(),
+                "Đơn nghỉ phép " + dateStr + " bị từ chối.",
+                updatedRequest.getId(),
+                null
+        );
+
         return new LeaveRequestResponseDTO(updatedRequest);
     }
 

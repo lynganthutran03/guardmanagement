@@ -120,9 +120,8 @@ public class DashboardService {
         stats.setAssignedShifts(assignedCount);
         stats.setOpenShifts(0);
 
-        List<LeaveRequest> leaves = leaveRequestRepository.findByStatusOrderByRequestedAtAsc(LeaveStatus.APPROVED);
+        List<LeaveRequest> leaves = leaveRequestRepository.findByStatusOrderByRequestedAtAsc(LeaveStatus.PENDING);
         List<LeaveRequestResponseDTO> upcoming = leaves.stream()
-                .filter(l -> l.getStartDate().isAfter(today) || l.getStartDate().isEqual(today))
                 .limit(5)
                 .map(LeaveRequestResponseDTO::new)
                 .collect(Collectors.toList());

@@ -73,23 +73,23 @@ public class ShiftController {
             String managerUsername = principal.getName();
 
             if (team == null || (!team.equals("A") && !team.equals("B"))) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid or missing team. Must be 'A' or 'B'."));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Đội của bảo vệ bị sai hoặc bị thiếu. Vui lòng liên hệ Admin để gán đội."));
             }
 
             if (weekStartDate.getDayOfWeek() != DayOfWeek.MONDAY) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Week start date must be a Monday."));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Vui lòng chọn thứ hai để tạo lịch trực."));
             }
 
             shiftService.generateWeekForTeam(team, weekStartDate, managerUsername);
 
-            return ResponseEntity.ok(Map.of("message", "Schedule generated successfully for Team " + team + " for week starting " + weekStartDate));
+            return ResponseEntity.ok(Map.of("message", "Tạo lịch trực tuần cho đội " + team + " từ ngày " + weekStartDate + " thành công."));
         } catch (DateTimeParseException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid weekStartDate format. Use YYYY-MM-DD."));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Format ngày không hợp lệ. Sử dụng YYYY-MM-DD."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (RuntimeException e) {
             System.err.println("Error during team schedule generation: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "An error occurred during schedule generation. Check server logs."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Đã có lỗi xảy ra trong lúc tạo lịch. Kiểm tra server logs."));
         }
     }
 
@@ -103,9 +103,9 @@ public class ShiftController {
             shiftService.generateWeekForGuard(guardId, weekStartDate, managerUsername);
             return ResponseEntity.ok(Map.of("message", "Schedule generated for the week " + guardId));
         } catch (NumberFormatException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid guardId format"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Mã bảo vệ không hợp lệ."));
         } catch (DateTimeParseException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid weekStartDate format. Use YYYY-MM-DD."));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Format ngày không hợp lệ. Use YYYY-MM-DD."));
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("lịch làm việc trong tuần này")) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));

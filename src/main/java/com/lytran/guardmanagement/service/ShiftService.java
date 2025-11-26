@@ -53,6 +53,9 @@ public class ShiftService {
     @Autowired
     private ShiftHistoryRepository shiftHistoryRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private static final LocalDate ROTATION_ANCHOR_DATE = LocalDate.of(2024, 1, 1);
 
     @Transactional
@@ -256,6 +259,13 @@ public class ShiftService {
         }
         shift.setGuard(guard);
         shiftRepository.save(shift);
+
+        notificationService.createNotificationForGuard(
+                guard,
+                "Bạn vừa được phân công ca trực mới vào " + shift.getShiftDate(),
+                null,
+                shift.getId()
+        );
     }
 
     public List<ShiftDTO> getAllShiftsForManager() {
@@ -264,14 +274,14 @@ public class ShiftService {
         return shifts.stream()
                 .map(shift -> {
                     ShiftDTO dto = convertToDTO(shift);
-                    
+
                     if (shift.getTimeSlot() != null) {
                         dto.setStartTime(shift.getTimeSlot().getStartTime());
                         dto.setEndTime(shift.getTimeSlot().getEndTime());
                     }
 
                     var historyOpt = shiftHistoryRepository.findByShiftId(shift.getId());
-                    
+
                     if (historyOpt.isPresent()) {
                         dto.setAttendanceStatus(historyOpt.get().getAttendanceStatus());
                         dto.setCheckInTime(historyOpt.get().getCompleteAt());
